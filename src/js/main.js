@@ -1,17 +1,39 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, POSENET_CONFIG } from './config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { Auth } from './auth.js';
 import { PoseDetector } from './poseDetection.js';
 import { ExerciseDetector } from './exerciseDetection.js';
 import { App } from './app.js';
 
 // Initialize Supabase client
-window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+async function initializeSupabase() {
+    try {
+        if (!window.supabase) {
+            console.error('Supabase client not loaded. Make sure the Supabase script is loaded first.');
+            return false;
+        }
+
+        console.log('Initializing Supabase with:', {
+            url: SUPABASE_URL ? 'URL present' : 'URL missing',
+            key: SUPABASE_ANON_KEY ? 'Key present' : 'Key missing'
+        });
+
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase client initialized');
+        return true;
+    } catch (error) {
+        console.error('❌ Error initializing Supabase:', error);
+        return false;
+    }
+}
 
 // Initialize TensorFlow and PoseNet
 async function initializeTF() {
     console.log('Starting initialization...');
 
     try {
+        // Initialize Supabase first
+        await initializeSupabase();
+
         // Ensure TensorFlow is loaded
         if (!window.tf) {
             throw new Error('TensorFlow not loaded');
@@ -23,20 +45,6 @@ async function initializeTF() {
             throw new Error('PoseNet not loaded');
         }
         console.log('✅ PoseNet library is ready');
-
-        // Load PoseNet model
-        console.log('Loading PoseNet model...');
-        const net = await window.posenet.load({
-            architecture: 'MobileNetV1',
-            outputStride: 16,
-            inputResolution: { width: 640, height: 480 },
-            multiplier: 0.75,
-            quantBytes: 2
-        });
-
-        // Store the model globally
-        window.poseNetModel = net;
-        console.log('✅ PoseNet model loaded successfully');
 
         // Initialize the application
         console.log('Initializing application...');

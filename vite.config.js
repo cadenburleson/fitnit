@@ -1,19 +1,22 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
 
 export default defineConfig({
-    root: 'src',
+    // Base public path when served in development or production
+    base: '/',
+
+    // Development server configuration
     server: {
         port: 3000,
-        open: true
+        open: true // Open browser on server start
     },
+
+    // Configure env file loading
+    envDir: './',
+
+    // Build configuration
     build: {
-        outDir: '../dist',
-        emptyOutDir: true
-    },
-    resolve: {
-        alias: {
-            '@': resolve(__dirname, './src')
-        }
+        outDir: 'dist',
+        assetsDir: 'assets',
+        sourcemap: true
     }
 }); 

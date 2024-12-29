@@ -1,17 +1,32 @@
-// Supabase Configuration
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Supabase configuration
+const VITE_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const VITE_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// PoseNet Configuration
+// Log environment variable status for debugging
+console.log('Environment variables status:', {
+    VITE_SUPABASE_URL: !!VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY: !!VITE_SUPABASE_ANON_KEY,
+    import_meta_env: import.meta.env
+});
+
+// Export with fallback values for development
+export const SUPABASE_URL = VITE_SUPABASE_URL || 'https://gigipaudayfboltnsnwi.supabase.co';
+export const SUPABASE_ANON_KEY = VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZ2lwYXVkYXlmYm9sdG5zbndpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU0NTI3MDgsImV4cCI6MjA1MTAyODcwOH0.JnQI48XvZiPKTkUQp6eORpQmELUBVMgu9thb2u5jugY';
+
+export const SUPABASE_CONFIG = {
+    url: SUPABASE_URL,
+    key: SUPABASE_ANON_KEY
+};
+
+// PoseNet configuration
 export const POSENET_CONFIG = {
     architecture: 'MobileNetV1',
     outputStride: 16,
-    inputResolution: { width: 640, height: 480 },
     multiplier: 0.75,
     quantBytes: 2
 };
 
-// Exercise Detection Configuration
+// Exercise configuration
 export const EXERCISE_CONFIG = {
     pushup: {
         repThreshold: 0.25,
@@ -35,14 +50,18 @@ export const EXERCISE_CONFIG = {
     }
 };
 
-// UI Configuration
+// Camera configuration
+export const CAMERA_CONFIG = {
+    width: 640,
+    height: 480,
+    facingMode: 'user',
+    frameRate: { ideal: 30 }
+};
+
+// UI configuration
 export const UI_CONFIG = {
+    confidenceThreshold: 0.3,
+    lineWidth: 2,
     repCounterUpdateInterval: 100,
-    formFeedbackUpdateInterval: 500,
-    cameraSettings: {
-        width: 640,
-        height: 480,
-        facingMode: 'user',
-        frameRate: { ideal: 30 }
-    }
+    formFeedbackUpdateInterval: 500
 }; 

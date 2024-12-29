@@ -1,4 +1,4 @@
-import { UI_CONFIG, POSENET_CONFIG } from './config.js';
+import { UI_CONFIG, POSENET_CONFIG, CAMERA_CONFIG } from './config.js';
 
 export class PoseDetector {
     constructor() {
@@ -11,7 +11,32 @@ export class PoseDetector {
 
         // Add pose smoothing
         this.previousPose = null;
-        this.smoothingFactor = 0.8; // Higher = more smoothing
+        // Smoothing factor: 0.0 = no smoothing, 1.0 = maximum smoothing
+        // 0.6 provides a good balance between responsiveness and stability
+        this.smoothingFactor = 0.6; // Changed from 0.8 for better responsiveness
+
+        // Define visual styles for skeleton and keypoints
+        this.styles = {
+            keypoint: {
+                outer: {
+                    radius: 8,
+                    color: 'rgba(255, 255, 255, 0.7)'
+                },
+                inner: {
+                    radius: 4,
+                    color: '#00ff88'
+                },
+                text: {
+                    color: 'white',
+                    font: '12px Arial',
+                    offset: { x: -50, y: 0 }
+                }
+            },
+            skeleton: {
+                lineWidth: UI_CONFIG.lineWidth,
+                color: 'rgba(0, 255, 136, 0.7)'
+            }
+        };
 
         // Define the pairs of keypoints that should be connected
         this.connectedKeypoints = [
@@ -29,18 +54,33 @@ export class PoseDetector {
 
     async initTF() {
         try {
+            // Try WebGL first
             await tf.setBackend('webgl');
             await tf.ready();
             console.log('✅ WebGL initialized');
+        } catch (error) {
+            console.warn('WebGL initialization failed, falling back to CPU:', error);
+            try {
+                // Fallback to CPU
+                await tf.setBackend('cpu');
+                await tf.ready();
+                console.log('✅ CPU backend initialized');
+            } catch (cpuError) {
+                console.error('❌ Failed to initialize TensorFlow backend:', cpuError);
+                throw cpuError;
+            }
+        }
 
-            // Load PoseNet with fixed configuration
+        try {
+            // Load PoseNet with current backend
             this.net = await posenet.load({
                 ...POSENET_CONFIG,
-                inputResolution: { width: 640, height: 480 } // Fixed resolution
+                inputResolution: { width: 640, height: 480 }
             });
             console.log('✅ PoseNet model loaded');
         } catch (error) {
-            console.error('❌ Error initializing:', error);
+            console.error('❌ Error loading PoseNet model:', error);
+            throw error;
         }
     }
 
@@ -67,12 +107,7 @@ export class PoseDetector {
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    width: { ideal: 640 },
-                    height: { ideal: 480 },
-                    facingMode: 'user',
-                    frameRate: { ideal: 30 }
-                },
+                video: CAMERA_CONFIG,
                 audio: false
             });
 
@@ -84,10 +119,10 @@ export class PoseDetector {
                     this.videoElement.play();
 
                     // Set fixed dimensions for video and canvas
-                    this.videoElement.width = 640;
-                    this.videoElement.height = 480;
-                    this.canvasElement.width = 640;
-                    this.canvasElement.height = 480;
+                    this.videoElement.width = CAMERA_CONFIG.width;
+                    this.videoElement.height = CAMERA_CONFIG.height;
+                    this.canvasElement.width = CAMERA_CONFIG.width;
+                    this.canvasElement.height = CAMERA_CONFIG.height;
 
                     // Apply CSS transform to flip the video horizontally
                     this.videoElement.style.transform = 'scaleX(-1)';
@@ -163,24 +198,24 @@ export class PoseDetector {
         keypoints.forEach(keypoint => {
             if (keypoint.score > 0.3) {
                 const { x, y } = keypoint.position;
+                const { outer, inner, text } = this.styles.keypoint;
 
                 // Draw outer circle
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, 8, 0, 2 * Math.PI);
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                this.ctx.arc(x, y, outer.radius, 0, 2 * Math.PI);
+                this.ctx.fillStyle = outer.color;
                 this.ctx.fill();
 
                 // Draw inner circle
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                this.ctx.fillStyle = '#00ff00';
+                this.ctx.arc(x, y, inner.radius, 0, 2 * Math.PI);
+                this.ctx.fillStyle = inner.color;
                 this.ctx.fill();
 
-                // Draw keypoint name (adjusted position for mirrored view)
-                this.ctx.fillStyle = 'white';
-                this.ctx.font = '12px Arial';
-                // Text position adjusted to be readable in mirrored view
-                this.ctx.fillText(keypoint.part, x - 50, y);
+                // Draw keypoint name
+                this.ctx.fillStyle = text.color;
+                this.ctx.font = text.font;
+                this.ctx.fillText(keypoint.part, x + text.offset.x, y + text.offset.y);
             }
         });
         this.ctx.restore();
@@ -209,11 +244,12 @@ export class PoseDetector {
     }
 
     drawSegment(start, end) {
+        const { lineWidth, color } = this.styles.skeleton;
         this.ctx.beginPath();
         this.ctx.moveTo(start.x, start.y);
         this.ctx.lineTo(end.x, end.y);
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeStyle = '#00ff00';
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.strokeStyle = color;
         this.ctx.stroke();
     }
 
