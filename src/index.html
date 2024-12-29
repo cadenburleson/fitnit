@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitnit - AI Fitness Tracker</title>
+    <meta name="description"
+        content="AI-powered fitness tracking application for real-time exercise detection and analysis">
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/utilities.css">
+</head>
+
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">Fitnit</div>
+            <div class="nav-links">
+                <button id="startWorkout" class="btn btn-primary">Start Workout</button>
+                <button id="loginBtn" class="btn btn-secondary">Login</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <div id="cameraContainer" class="camera-container hidden">
+            <video id="video" playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="exercise-stats">
+                <div id="repCounter">Reps: 0</div>
+                <div id="formFeedback">Form: Ready</div>
+            </div>
+        </div>
+
+        <div id="welcomeScreen" class="welcome-screen">
+            <h1>Welcome to Fitnit</h1>
+            <p>AI-powered exercise tracking and form analysis</p>
+            <div class="exercise-list">
+                <h2>Available Exercises:</h2>
+                <ul>
+                    <li>Push-ups</li>
+                    <li>Crunches</li>
+                    <li>Squats</li>
+                    <li>Dumbbell curls</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- Load dependencies first -->
+    <script>
+        // Configure TensorFlow.js before loading
+        window.tf = {
+            ENV: {
+                WEBGL_VERSION: 1,
+                WEBGL_FORCE_F16_TEXTURES: true,
+                WEBGL_PACK: false
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Load our application -->
+    <script type="module" src="./js/main.js"></script>
+
+    <!-- Debug info -->
+    <script>
+        // Add debug logging
+        console.log('Debug: Document loaded');
+        window.addEventListener('error', function (e) {
+            console.error('Global error:', e.error);
+        });
+    </script>
+</body>
+
+</html>
