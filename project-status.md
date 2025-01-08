@@ -12,9 +12,17 @@
 - ✅ Real-time form analysis and feedback
 - ✅ Pose visualization with keypoints and skeleton
 - ✅ Exercise switching with state management
-- ✅ Draggable and dockable exercise info panel
+- ✅ Draggable and dockable exercise info panel with improved UI:
+  - Modern card design with three-column layout
+  - Drag handle indicator
+  - Seamless video integration when docked
+  - Improved spacing and visual feedback
 - ✅ Responsive design for mobile devices
 - ✅ Visual feedback for tracking state
+- ✅ Navigation improvements:
+  - Branded logo with home link
+  - Consistent button styling
+  - Clear sign-up and login actions
 
 ## In Progress
 - 🔄 Performance optimizations

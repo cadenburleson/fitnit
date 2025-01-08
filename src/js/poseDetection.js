@@ -15,7 +15,7 @@ export class PoseDetector {
         this.previousPoses = [];
         this.windowSize = 5; // Number of frames to average
         this.alpha = 0.3; // Low-pass filter coefficient
-        this.minConfidence = 0.3;
+        this.minConfidence = 0.2; // Lowered from 0.3 for better detection
     }
 
     async initialize() {
@@ -32,9 +32,11 @@ export class PoseDetector {
                 },
                 runningMode: "VIDEO",
                 numPoses: 1,
-                minPoseDetectionConfidence: 0.5,
-                minPosePresenceConfidence: 0.5,
-                minTrackingConfidence: 0.5
+                minPoseDetectionConfidence: 0.2,
+                minPosePresenceConfidence: 0.2,
+                minTrackingConfidence: 0.2,
+                outputSegmentation: false,
+                smoothLandmarks: true
             });
 
             console.log('✅ MediaPipe Vision initialized');
@@ -140,6 +142,12 @@ export class PoseDetector {
             const results = await this.poseLandmarker.detectForVideo(this.video, startTimeMs);
 
             if (results.landmarks && results.landmarks.length > 0) {
+                // Add image dimensions to the detection results
+                results.imageDimensions = {
+                    width: this.video.width,
+                    height: this.video.height
+                };
+
                 // Convert MediaPipe landmarks to our app's keypoint format
                 const pose = this.convertToCompatibleFormat(results.landmarks[0]);
                 const smoothedPose = this.smoothPose(pose);
@@ -154,7 +162,6 @@ export class PoseDetector {
     }
 
     convertToCompatibleFormat(landmarks) {
-        // Map MediaPipe landmarks to our app's keypoint format for exercise detection
         const keypointMap = {
             0: 'nose',
             11: 'leftShoulder',
@@ -172,12 +179,21 @@ export class PoseDetector {
         };
 
         const keypoints = [];
+        let totalVisibility = 0;
+        let visiblePoints = 0;
+
         for (const [index, part] of Object.entries(keypointMap)) {
             const landmark = landmarks[parseInt(index)];
+            const visibility = landmark.visibility || 0;
+            totalVisibility += visibility;
+            if (visibility > this.minConfidence) {
+                visiblePoints++;
+            }
+
             keypoints.push({
                 part,
                 index: parseInt(index),
-                score: landmark.visibility || 0,
+                score: visibility,
                 position: {
                     x: landmark.x * this.canvas.width,
                     y: landmark.y * this.canvas.height

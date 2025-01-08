@@ -30,7 +30,7 @@ export const CAMERA_CONFIG = {
 export const UI_CONFIG = {
     drawKeypoints: true,
     drawSkeleton: true,
-    minConfidence: 0.3,
+    minConfidence: 0.2,
     lineWidth: 2,
     pointRadius: 4,
     pointColor: '#00ff88',

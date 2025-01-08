@@ -24,6 +24,9 @@ class App {
             // Setup event listeners
             this.setupEventListeners();
 
+            // Initialize the exercise detector with the default exercise
+            this.exerciseDetector.setExercise(this.currentExercise);
+
             // Set up pose detection callback
             this.poseDetector.onPoseDetected = (pose) => {
                 if (this.isTracking && pose) {
