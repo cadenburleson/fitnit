@@ -7,10 +7,14 @@
 - ✅ Exercise detection and rep counting for:
   - Push-ups
   - Squats
+  - Crunches
   - Dumbbell Curls
 - ✅ Real-time form analysis and feedback
 - ✅ Pose visualization with keypoints and skeleton
 - ✅ Exercise switching with state management
+- ✅ Draggable and dockable exercise info panel
+- ✅ Responsive design for mobile devices
+- ✅ Visual feedback for tracking state
 
 ## In Progress
 - 🔄 Performance optimizations
@@ -28,6 +32,7 @@
 - 📝 Exercise history tracking
 - 📝 User profiles and authentication
 - 📝 Basic workout statistics
+- 📝 Save user preferences for UI layout
 
 ## Future Enhancements (Long Term)
 - 📝 Custom exercise definitions
@@ -42,11 +47,10 @@
 - ⚠️ Occasional pose detection inaccuracies in poor lighting
 - ⚠️ Need better error handling for camera permissions
 - ⚠️ Form detection sensitivity needs tuning
-- ⚠️ UI needs mobile responsiveness
 
 ## Next Steps
 1. Add more exercises and improve form detection
 2. Implement user authentication and profiles
 3. Add exercise history and basic statistics
-4. Improve UI/UX and mobile responsiveness
-5. Add workout planning features 
+4. Add workout planning features
+5. Enhance form feedback system 

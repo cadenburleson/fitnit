@@ -10,13 +10,27 @@
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
 
         .video-container {
             position: relative;
-            width: 640px;
+            width: 100%;
+            max-width: 640px;
             height: 480px;
-            margin: 20px auto;
+            margin-bottom: 20px;
         }
 
         #video {
@@ -35,13 +49,51 @@
         }
 
         .exercise-info {
-            position: fixed;
-            left: 20px;
-            top: 20px;
             background: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 20px;
             border-radius: 10px;
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            cursor: move;
+            user-select: none;
+            width: auto;
+            min-width: 200px;
+        }
+
+        .exercise-info.docked {
+            position: static;
+            width: 100%;
+            max-width: 640px;
+            box-sizing: border-box;
+            margin: 0 auto;
+            cursor: default;
+        }
+
+        .exercise-info .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .exercise-info .dock-button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            opacity: 0.7;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        .exercise-info .dock-button:hover {
+            opacity: 1;
         }
 
         #repCounter,
@@ -53,6 +105,7 @@
         .controls {
             text-align: center;
             margin: 20px 0;
+            width: 100%;
         }
 
         button {
@@ -68,6 +121,10 @@
         #startWorkout {
             background: #4CAF50;
             color: white;
+        }
+
+        #startWorkout.tracking {
+            background: #f44336;
         }
 
         #login {
@@ -86,39 +143,127 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
+
+        @media (max-width: 768px) {
+            .exercise-info {
+                position: static !important;
+                width: 100%;
+                max-width: 640px;
+                box-sizing: border-box;
+                margin: 0 auto;
+            }
+
+            .video-container {
+                height: 360px;
+                margin-bottom: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            select,
+            button {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <h1>Exercise Tracker</h1>
-    <p>AI-powered exercise tracking and form analysis</p>
+    <div class="container">
+        <h1>Exercise Tracker</h1>
+        <p>AI-powered exercise tracking and form analysis</p>
 
-    <div class="controls">
-        <select id="exerciseSelect">
-            <option value="pushup">Push-ups</option>
-            <option value="squat">Squats</option>
-            <option value="curl">Dumbbell Curls</option>
-            <option value="crunch">Crunches</option>
-        </select>
-        <button id="startWorkout">Start Tracking</button>
-        <button id="login">Login</button>
-    </div>
+        <div class="controls">
+            <select id="exerciseSelect">
+                <option value="pushup">Push-ups</option>
+                <option value="squat">Squats</option>
+                <option value="curl">Dumbbell Curls</option>
+                <option value="crunch">Crunches</option>
+            </select>
+            <button id="startWorkout">Start Tracking</button>
+            <button id="login">Login</button>
+        </div>
 
-    <div class="video-container">
-        <video id="video" playsinline></video>
-        <canvas id="overlay"></canvas>
-    </div>
+        <div class="video-container">
+            <video id="video" playsinline></video>
+            <canvas id="overlay"></canvas>
+        </div>
 
-    <div class="exercise-info">
-        <div id="exerciseType">Exercise: Push-ups</div>
-        <div id="repCounter">Reps: 0</div>
-        <div id="formFeedback">Form: Ready</div>
+        <div class="exercise-info">
+            <div class="header">
+                <div id="exerciseType">Exercise: Push-ups</div>
+                <button class="dock-button" title="Toggle position">📌</button>
+            </div>
+            <div id="repCounter">Reps: 0</div>
+            <div id="formFeedback">Form: Ready</div>
+        </div>
     </div>
 
     <!-- Load Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
     <script type="module" src="/src/js/main.js"></script>
+    <script>
+        const exerciseInfo = document.querySelector('.exercise-info');
+        const dockButton = exerciseInfo.querySelector('.dock-button');
+        const startButton = document.getElementById('startWorkout');
+        let isDragging = false;
+
+        // Dock/undock functionality
+        dockButton.addEventListener('click', () => {
+            exerciseInfo.classList.toggle('docked');
+        });
+
+        // Update start button appearance
+        startButton.addEventListener('click', () => {
+            startButton.classList.toggle('tracking');
+            startButton.textContent = startButton.classList.contains('tracking') ? 'Stop Tracking' : 'Start Tracking';
+        });
+
+        // Drag functionality
+        exerciseInfo.addEventListener('mousedown', (e) => {
+            if (e.target === dockButton || exerciseInfo.classList.contains('docked')) return;
+            isDragging = true;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                requestAnimationFrame(() => {
+                    exerciseInfo.style.left = (e.pageX - exerciseInfo.offsetWidth / 2) + 'px';
+                    exerciseInfo.style.top = (e.pageY - 20) + 'px';
+                });
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch support
+        exerciseInfo.addEventListener('touchstart', (e) => {
+            if (e.target === dockButton || exerciseInfo.classList.contains('docked')) return;
+            isDragging = true;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                requestAnimationFrame(() => {
+                    exerciseInfo.style.left = (touch.pageX - exerciseInfo.offsetWidth / 2) + 'px';
+                    exerciseInfo.style.top = (touch.pageY - 20) + 'px';
+                });
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+    </script>
 </body>
 
 </html>
