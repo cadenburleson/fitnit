@@ -46,6 +46,18 @@ export class ExerciseDetector {
                     armAngle: 45, // Arms curled up
                     tolerance: 15
                 }
+            },
+            crunch: {
+                name: 'Crunch',
+                keypoints: ['leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 'leftKnee', 'rightKnee'],
+                startPosition: {
+                    torsoAngle: 90, // Lying flat position
+                    tolerance: 15
+                },
+                endPosition: {
+                    torsoAngle: 70, // Crunched up position
+                    tolerance: 10  // Reduced tolerance for more precise detection
+                }
             }
         };
     }
@@ -82,6 +94,9 @@ export class ExerciseDetector {
                 break;
             case 'curl':
                 result = this.detectCurl(pose);
+                break;
+            case 'crunch':
+                result = this.detectCrunch(pose);
                 break;
         }
 
@@ -214,6 +229,50 @@ export class ExerciseDetector {
         return { feedback: formFeedback };
     }
 
+    detectCrunch(pose) {
+        const config = this.exercises.crunch;
+        const keypoints = this.getKeypoints(pose, config.keypoints);
+
+        // Check if we have the required keypoints
+        const requiredKeypoints = ['leftShoulder', 'rightShoulder', 'leftHip', 'rightHip'];
+        const hasRequiredKeypoints = requiredKeypoints.every(kp => keypoints[kp]);
+
+        if (!hasRequiredKeypoints) {
+            return { feedback: 'Position not detected - lie on your back and face the camera sideways' };
+        }
+
+        // Calculate torso angle relative to vertical
+        const shoulderPoint = {
+            x: (keypoints.leftShoulder.x + keypoints.rightShoulder.x) / 2,
+            y: (keypoints.leftShoulder.y + keypoints.rightShoulder.y) / 2
+        };
+
+        const hipPoint = {
+            x: (keypoints.leftHip.x + keypoints.rightHip.x) / 2,
+            y: (keypoints.leftHip.y + keypoints.rightHip.y) / 2
+        };
+
+        // Create a vertical reference point above the hip
+        const verticalPoint = {
+            x: hipPoint.x,
+            y: hipPoint.y - 100  // 100 pixels up from hip
+        };
+
+        // Calculate angle between torso and vertical
+        const torsoAngle = this.calculateAngle(verticalPoint, hipPoint, shoulderPoint);
+
+        if (!torsoAngle) {
+            return { feedback: 'Cannot detect torso angle clearly' };
+        }
+
+        // Check form and track rep
+        const formFeedback = this.checkCrunchForm(torsoAngle, keypoints);
+        this.trackRep(torsoAngle, config);
+
+        // Add angle to feedback for debugging
+        return { feedback: `${formFeedback} (Angle: ${Math.round(torsoAngle)}°)` };
+    }
+
     getKeypoints(pose, requiredKeypoints) {
         const keypointMap = {};
         requiredKeypoints.forEach(keypointName => {
@@ -308,14 +367,57 @@ export class ExerciseDetector {
         return feedback;
     }
 
+    checkCrunchForm(torsoAngle, keypoints) {
+        const config = this.exercises.crunch;
+        let feedback = 'Good form';
+
+        // Only check the basic angle for form feedback
+        if (torsoAngle < config.endPosition.torsoAngle - config.endPosition.tolerance) {
+            feedback = 'Lower back down - dont crunch too far';
+        } else if (torsoAngle > config.startPosition.torsoAngle + config.startPosition.tolerance) {
+            feedback = 'Align your back with the ground';
+        } else if (torsoAngle <= config.endPosition.torsoAngle + config.endPosition.tolerance) {
+            feedback = 'Good form - holding crunch';
+        } else {
+            feedback = 'Crunch up more';
+        }
+
+        return feedback;
+    }
+
     trackRep(angle, config) {
         if (!angle || !config) return;
 
         // Determine which angle property to use based on the exercise
-        const startAngle = config.startPosition.armAngle || config.startPosition.kneeAngle;
-        const endAngle = config.endPosition.armAngle || config.endPosition.kneeAngle;
+        const startAngle = config.startPosition.armAngle || config.startPosition.kneeAngle || config.startPosition.torsoAngle;
+        const endAngle = config.endPosition.armAngle || config.endPosition.kneeAngle || config.endPosition.torsoAngle;
         const tolerance = config.startPosition.tolerance;
 
+        // For crunches, we want to ensure a complete movement
+        if (this.currentExercise === 'crunch') {
+            if (!this.isInStartPosition) {
+                // Only move to start position if we're close to the start angle
+                if (Math.abs(angle - startAngle) <= tolerance) {
+                    this.isInStartPosition = true;
+                }
+            } else {
+                // When in start position, check if we've reached the crunch position
+                if (Math.abs(angle - endAngle) <= tolerance) {
+                    // Only count the rep if we haven't already counted it
+                    if (!this.lastPosition || Math.abs(this.lastPosition - endAngle) > tolerance) {
+                        this.repCount++;
+                        // Mark this position so we don't count it again
+                        this.lastPosition = angle;
+                    }
+                } else if (Math.abs(angle - startAngle) <= tolerance) {
+                    // Reset lastPosition when returning to start position
+                    this.lastPosition = null;
+                }
+            }
+            return;
+        }
+
+        // Original logic for other exercises
         if (!this.isInStartPosition) {
             // Check if in start position
             if (Math.abs(angle - startAngle) <= tolerance) {
