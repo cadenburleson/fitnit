@@ -1,8 +1,10 @@
 export class Auth {
     constructor() {
         this.loginBtn = document.getElementById('loginBtn');
-        this.setupEventListeners();
-        this.checkSession();
+        if (this.loginBtn) {
+            this.setupEventListeners();
+        }
+        this.checkSession().catch(console.error);
     }
 
     setupEventListeners() {
@@ -16,8 +18,18 @@ export class Auth {
     }
 
     async checkSession() {
-        const session = await window.supabase.auth.getSession();
-        this.updateUIState(!!session.data.session);
+        try {
+            if (!window.supabase) {
+                console.warn('Supabase not initialized, running in offline mode');
+                return false;
+            }
+            const session = await window.supabase.auth.getSession();
+            this.updateUIState(!!session.data.session);
+            return !!session.data.session;
+        } catch (error) {
+            console.error('Error checking session:', error);
+            return false;
+        }
     }
 
     showAuthModal() {
@@ -34,6 +46,11 @@ export class Auth {
     }
 
     async signUp(email) {
+        if (!window.supabase) {
+            alert('Authentication is not available in offline mode');
+            return;
+        }
+
         const password = prompt('Create a password (minimum 6 characters):');
         if (!password) return;
 
@@ -54,6 +71,11 @@ export class Auth {
     }
 
     async signIn(email) {
+        if (!window.supabase) {
+            alert('Authentication is not available in offline mode');
+            return;
+        }
+
         const password = prompt('Enter your password:');
         if (!password) return;
 
@@ -72,6 +94,11 @@ export class Auth {
     }
 
     async signOut() {
+        if (!window.supabase) {
+            this.updateUIState(false);
+            return;
+        }
+
         try {
             const { error } = await window.supabase.auth.signOut();
             if (error) throw error;
@@ -83,27 +110,46 @@ export class Auth {
     }
 
     isLoggedIn() {
-        return this.loginBtn.textContent === 'Logout';
+        return this.loginBtn?.textContent === 'Logout';
     }
 
     updateUIState(isLoggedIn) {
-        this.loginBtn.textContent = isLoggedIn ? 'Logout' : 'Login';
+        if (this.loginBtn) {
+            this.loginBtn.textContent = isLoggedIn ? 'Logout' : 'Login';
+        }
     }
 
     async getCurrentUser() {
-        const { data: { user }, error } = await window.supabase.auth.getUser();
-        if (error) {
-            console.error('Error getting user:', error.message);
+        try {
+            if (!window.supabase) {
+                console.warn('Supabase not initialized, returning null user');
+                return null;
+            }
+            const { data: { user }, error } = await window.supabase.auth.getUser();
+            if (error) {
+                console.error('Error getting user:', error.message);
+                return null;
+            }
+            return user;
+        } catch (error) {
+            console.error('Error getting user:', error);
             return null;
         }
-        return user;
     }
 
     async saveUserData(exerciseData) {
-        const user = await this.getCurrentUser();
-        if (!user) return;
-
         try {
+            if (!window.supabase) {
+                console.warn('Supabase not initialized, skipping data save');
+                return;
+            }
+
+            const user = await this.getCurrentUser();
+            if (!user) {
+                console.warn('No user logged in, skipping data save');
+                return;
+            }
+
             const { error } = await window.supabase
                 .from('exercise_history')
                 .insert([

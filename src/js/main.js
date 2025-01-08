@@ -1,64 +1,101 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { Auth } from './auth.js';
 import { PoseDetector } from './poseDetection.js';
 import { ExerciseDetector } from './exerciseDetection.js';
-import { App } from './app.js';
 
-// Initialize Supabase client
-async function initializeSupabase() {
-    try {
-        if (!window.supabase) {
-            console.error('Supabase client not loaded. Make sure the Supabase script is loaded first.');
+let app = null;
+
+class App {
+    constructor() {
+        this.poseDetector = new PoseDetector();
+        this.exerciseDetector = new ExerciseDetector();
+        this.isTracking = false;
+        this.currentExercise = 'pushup';
+        this.initialized = false;
+    }
+
+    async initialize() {
+        try {
+            // Get DOM elements
+            this.repCounter = document.getElementById('repCounter');
+            this.formFeedback = document.getElementById('formFeedback');
+            this.exerciseType = document.getElementById('exerciseType');
+            this.startButton = document.getElementById('startWorkout');
+            this.exerciseSelect = document.getElementById('exerciseSelect');
+
+            // Setup event listeners
+            this.setupEventListeners();
+
+            // Set up pose detection callback
+            this.poseDetector.onPoseDetected = (pose) => {
+                if (this.isTracking && pose) {
+                    this.onPoseDetected(pose);
+                }
+            };
+
+            // Initialize and start pose detection
+            await this.poseDetector.start();
+            this.initialized = true;
+            return true;
+        } catch (error) {
+            console.error('Error during initialization:', error);
             return false;
         }
+    }
 
-        console.log('Initializing Supabase with:', {
-            url: SUPABASE_URL ? 'URL present' : 'URL missing',
-            key: SUPABASE_ANON_KEY ? 'Key present' : 'Key missing'
+    setupEventListeners() {
+        this.startButton.addEventListener('click', () => this.toggleTracking());
+        this.exerciseSelect.addEventListener('change', (e) => {
+            this.currentExercise = e.target.value;
+            this.exerciseType.textContent = `Exercise: ${this.capitalizeFirstLetter(this.currentExercise)}s`;
+            this.exerciseDetector.setExercise(this.currentExercise);
+            if (this.isTracking) {
+                this.stopTracking();
+            }
         });
+    }
 
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('✅ Supabase client initialized');
-        return true;
-    } catch (error) {
-        console.error('❌ Error initializing Supabase:', error);
-        return false;
+    capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    toggleTracking() {
+        if (this.isTracking) {
+            this.stopTracking();
+        } else {
+            this.startTracking();
+        }
+    }
+
+    startTracking() {
+        this.isTracking = true;
+        this.startButton.textContent = 'Stop Tracking';
+        this.exerciseDetector.resetState();
+        this.repCounter.textContent = 'Reps: 0';
+        this.formFeedback.textContent = 'Form: Ready';
+    }
+
+    stopTracking() {
+        this.isTracking = false;
+        this.startButton.textContent = 'Start Tracking';
+    }
+
+    onPoseDetected(pose) {
+        const result = this.exerciseDetector.detectExercise(pose);
+        if (result) {
+            this.repCounter.textContent = `Reps: ${result.reps}`;
+            this.formFeedback.textContent = `Form: ${result.feedback}`;
+        }
     }
 }
 
-// Initialize TensorFlow and PoseNet
-async function initializeTF() {
-    console.log('Starting initialization...');
-
+// Initialize the application when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Initialize Supabase first
-        await initializeSupabase();
-
-        // Ensure TensorFlow is loaded
-        if (!window.tf) {
-            throw new Error('TensorFlow not loaded');
+        app = new App();
+        const success = await app.initialize();
+        if (!success) {
+            console.error('Failed to initialize application');
         }
-        console.log('✅ TensorFlow.js is ready');
-
-        // Ensure PoseNet is loaded
-        if (!window.posenet) {
-            throw new Error('PoseNet not loaded');
-        }
-        console.log('✅ PoseNet library is ready');
-
-        // Initialize the application
-        console.log('Initializing application...');
-        window.app = new App();
-        console.log('✅ Application initialized');
     } catch (error) {
-        console.error('❌ Error during initialization:', error);
+        console.error('Error during application startup:', error);
     }
-}
-
-// Wait for everything to be loaded
-window.addEventListener('load', () => {
-    console.log('Window loaded, starting initialization...');
-    initializeTF().catch(error => {
-        console.error('Failed to initialize:', error);
-    });
 }); 

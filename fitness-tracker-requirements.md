@@ -49,8 +49,10 @@ A cross-platform fitness application that uses computer vision and body tracking
 - Consistent UI element positioning across devices
 
 ### Performance Requirements
-- Maximum 100ms latency for pose detection
-- 30 FPS minimum for video processing
+- Real-time pose detection at 30+ FPS
+- Low latency feedback (<100ms)
+- Smooth UI animations and transitions
+- Responsive design for various screen sizes
 - Offline functionality for core features
 - Efficient battery usage optimization
 

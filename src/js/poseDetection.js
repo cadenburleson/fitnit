@@ -1,100 +1,46 @@
-import { UI_CONFIG, POSENET_CONFIG, CAMERA_CONFIG } from './config.js';
+import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
+import { UI_CONFIG, CAMERA_CONFIG } from './config.js';
 
 export class PoseDetector {
     constructor() {
         console.log('Initializing PoseDetector');
-        this.net = null;
-        this.videoElement = document.getElementById('video');
-        this.canvasElement = document.getElementById('overlay');
-        this.ctx = this.canvasElement.getContext('2d');
+        this.poseLandmarker = null;
+        this.video = document.getElementById('video');
+        this.canvas = document.getElementById('overlay');
+        this.ctx = this.canvas.getContext('2d');
         this.isRunning = false;
+        this.onPoseDetected = null;
 
-        // Add pose smoothing
-        this.previousPose = null;
-        // Smoothing factor: 0.0 = no smoothing, 1.0 = maximum smoothing
-        // 0.6 provides a good balance between responsiveness and stability
-        this.smoothingFactor = 0.6; // Changed from 0.8 for better responsiveness
-
-        // Define visual styles for skeleton and keypoints
-        this.styles = {
-            keypoint: {
-                outer: {
-                    radius: 8,
-                    color: 'rgba(255, 255, 255, 0.7)'
-                },
-                inner: {
-                    radius: 4,
-                    color: '#00ff88'
-                },
-                text: {
-                    color: 'white',
-                    font: '12px Arial',
-                    offset: { x: -50, y: 0 }
-                }
-            },
-            skeleton: {
-                lineWidth: UI_CONFIG.lineWidth,
-                color: 'rgba(0, 255, 136, 0.7)'
-            }
-        };
-
-        // Define the pairs of keypoints that should be connected
-        this.connectedKeypoints = [
-            ['nose', 'leftEye'], ['leftEye', 'leftEar'], ['nose', 'rightEye'], ['rightEye', 'rightEar'],
-            ['leftShoulder', 'rightShoulder'], ['leftShoulder', 'leftElbow'], ['leftElbow', 'leftWrist'],
-            ['rightShoulder', 'rightElbow'], ['rightElbow', 'rightWrist'],
-            ['leftShoulder', 'leftHip'], ['rightShoulder', 'rightHip'],
-            ['leftHip', 'rightHip'], ['leftHip', 'leftKnee'], ['leftKnee', 'leftAnkle'],
-            ['rightHip', 'rightKnee'], ['rightKnee', 'rightAnkle']
-        ];
-
-        // Initialize TensorFlow.js backend
-        this.initTF();
-    }
-
-    async initTF() {
-        try {
-            // Try WebGL first
-            await tf.setBackend('webgl');
-            await tf.ready();
-            console.log('✅ WebGL initialized');
-        } catch (error) {
-            console.warn('WebGL initialization failed, falling back to CPU:', error);
-            try {
-                // Fallback to CPU
-                await tf.setBackend('cpu');
-                await tf.ready();
-                console.log('✅ CPU backend initialized');
-            } catch (cpuError) {
-                console.error('❌ Failed to initialize TensorFlow backend:', cpuError);
-                throw cpuError;
-            }
-        }
-
-        try {
-            // Load PoseNet with current backend
-            this.net = await posenet.load({
-                ...POSENET_CONFIG,
-                inputResolution: { width: 640, height: 480 }
-            });
-            console.log('✅ PoseNet model loaded');
-        } catch (error) {
-            console.error('❌ Error loading PoseNet model:', error);
-            throw error;
-        }
+        // Enhanced pose smoothing
+        this.previousPoses = [];
+        this.windowSize = 5; // Number of frames to average
+        this.alpha = 0.3; // Low-pass filter coefficient
+        this.minConfidence = 0.3;
     }
 
     async initialize() {
-        console.log('Checking PoseNet model...');
+        console.log('Initializing MediaPipe Vision...');
         try {
-            if (!this.net) {
-                console.error('❌ PoseNet model not available');
-                return false;
-            }
-            console.log('✅ PoseNet model ready');
+            const vision = await FilesetResolver.forVisionTasks(
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+            );
+
+            this.poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+                baseOptions: {
+                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+                    delegate: "GPU"
+                },
+                runningMode: "VIDEO",
+                numPoses: 1,
+                minPoseDetectionConfidence: 0.5,
+                minPosePresenceConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            console.log('✅ MediaPipe Vision initialized');
             return true;
         } catch (error) {
-            console.error('❌ Error checking PoseNet model:', error);
+            console.error('❌ Error initializing MediaPipe Vision:', error);
             return false;
         }
     }
@@ -106,156 +52,241 @@ export class PoseDetector {
         }
 
         try {
+            // Check camera permissions
+            const permissions = await navigator.permissions.query({ name: 'camera' });
+            if (permissions.state === 'denied') {
+                throw new Error('Camera permission has been denied. Please reset permissions and try again.');
+            }
+
+            // Get video element
+            this.video = document.getElementById('video');
+            this.canvas = document.getElementById('overlay');
+
+            if (!this.video || !this.canvas) {
+                throw new Error('Required video or canvas elements not found');
+            }
+
+            // Set up canvas context
+            this.ctx = this.canvas.getContext('2d');
+
+            // Request camera stream
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: CAMERA_CONFIG,
+                video: {
+                    width: CAMERA_CONFIG.width,
+                    height: CAMERA_CONFIG.height,
+                    facingMode: CAMERA_CONFIG.facingMode,
+                    frameRate: CAMERA_CONFIG.frameRate
+                },
                 audio: false
             });
 
-            this.videoElement.srcObject = stream;
+            if (!stream || !stream.active) {
+                throw new Error('Failed to obtain active camera stream');
+            }
+
+            // Set up video element with stream
+            this.video.srcObject = stream;
             console.log('✅ Camera stream obtained');
 
-            return new Promise((resolve) => {
-                this.videoElement.onloadedmetadata = () => {
-                    this.videoElement.play();
+            // Wait for video to be ready
+            return new Promise((resolve, reject) => {
+                this.video.onloadedmetadata = () => {
+                    try {
+                        // Set fixed dimensions
+                        this.video.width = CAMERA_CONFIG.width;
+                        this.video.height = CAMERA_CONFIG.height;
+                        this.canvas.width = CAMERA_CONFIG.width;
+                        this.canvas.height = CAMERA_CONFIG.height;
 
-                    // Set fixed dimensions for video and canvas
-                    this.videoElement.width = CAMERA_CONFIG.width;
-                    this.videoElement.height = CAMERA_CONFIG.height;
-                    this.canvasElement.width = CAMERA_CONFIG.width;
-                    this.canvasElement.height = CAMERA_CONFIG.height;
+                        // Mirror video
+                        this.video.style.transform = 'scaleX(-1)';
+                        this.canvas.style.transform = 'scaleX(-1)';
 
-                    // Apply CSS transform to flip the video horizontally
-                    this.videoElement.style.transform = 'scaleX(-1)';
-                    // Also flip the canvas to match
-                    this.canvasElement.style.transform = 'scaleX(-1)';
+                        this.video.play().then(() => {
+                            console.log('✅ Video playback started');
+                            resolve(true);
+                        }).catch(error => {
+                            reject(new Error('Failed to start video playback: ' + error.message));
+                        });
 
-                    console.log('✅ Video element initialized', {
-                        width: this.videoElement.width,
-                        height: this.videoElement.height,
-                        mirrored: true
-                    });
-                    resolve(true);
+                    } catch (error) {
+                        reject(new Error('Failed to initialize video element: ' + error.message));
+                    }
+                };
+
+                this.video.onerror = (error) => {
+                    reject(new Error('Video element error: ' + error.message));
                 };
             });
         } catch (error) {
             console.error('❌ Error accessing camera:', error);
-            throw error;
+            if (error.name === 'NotAllowedError') {
+                throw new Error('Camera access was denied. Please check your camera permissions in browser settings.');
+            } else if (error.name === 'NotFoundError') {
+                throw new Error('No camera device found. Please check your camera connection.');
+            } else {
+                throw error;
+            }
         }
     }
 
+    async detectPose() {
+        if (!this.poseLandmarker || !this.video || this.video.readyState !== 4) {
+            return null;
+        }
+
+        try {
+            const startTimeMs = performance.now();
+            const results = await this.poseLandmarker.detectForVideo(this.video, startTimeMs);
+
+            if (results.landmarks && results.landmarks.length > 0) {
+                // Convert MediaPipe landmarks to our app's keypoint format
+                const pose = this.convertToCompatibleFormat(results.landmarks[0]);
+                const smoothedPose = this.smoothPose(pose);
+                return smoothedPose;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error detecting pose:', error);
+            return null;
+        }
+    }
+
+    convertToCompatibleFormat(landmarks) {
+        // Map MediaPipe landmarks to our app's keypoint format for exercise detection
+        const keypointMap = {
+            0: 'nose',
+            11: 'leftShoulder',
+            12: 'rightShoulder',
+            13: 'leftElbow',
+            14: 'rightElbow',
+            15: 'leftWrist',
+            16: 'rightWrist',
+            23: 'leftHip',
+            24: 'rightHip',
+            25: 'leftKnee',
+            26: 'rightKnee',
+            27: 'leftAnkle',
+            28: 'rightAnkle'
+        };
+
+        const keypoints = [];
+        for (const [index, part] of Object.entries(keypointMap)) {
+            const landmark = landmarks[parseInt(index)];
+            keypoints.push({
+                part,
+                index: parseInt(index),
+                score: landmark.visibility || 0,
+                position: {
+                    x: landmark.x * this.canvas.width,
+                    y: landmark.y * this.canvas.height
+                }
+            });
+        }
+
+        return { keypoints, score: 1.0 };
+    }
+
     smoothPose(currentPose) {
-        if (!this.previousPose) {
-            this.previousPose = currentPose;
+        if (!currentPose || !currentPose.keypoints) return currentPose;
+
+        if (this.previousPoses.length === 0) {
+            this.previousPoses.push(currentPose);
             return currentPose;
         }
 
         const smoothedPose = {
             ...currentPose,
             keypoints: currentPose.keypoints.map((keypoint, index) => {
-                const prevKeypoint = this.previousPose.keypoints[index];
+                const previousPositions = this.previousPoses.map(pose => pose.keypoints[index]);
+
+                if (keypoint.score < this.minConfidence) {
+                    return keypoint;
+                }
+
+                const smoothedPosition = {
+                    x: this.applyLowPassFilter(keypoint.position.x, previousPositions.map(p => p.position.x)),
+                    y: this.applyLowPassFilter(keypoint.position.y, previousPositions.map(p => p.position.y))
+                };
+
                 return {
                     ...keypoint,
-                    position: {
-                        x: this.smoothValue(keypoint.position.x, prevKeypoint.position.x),
-                        y: this.smoothValue(keypoint.position.y, prevKeypoint.position.y)
-                    },
-                    score: this.smoothValue(keypoint.score, prevKeypoint.score)
+                    position: smoothedPosition,
+                    score: this.applyLowPassFilter(keypoint.score, previousPositions.map(p => p.score))
                 };
             })
         };
 
-        this.previousPose = smoothedPose;
+        this.previousPoses.push(smoothedPose);
+        if (this.previousPoses.length > this.windowSize) {
+            this.previousPoses.shift();
+        }
+
         return smoothedPose;
     }
 
-    smoothValue(current, previous) {
-        return previous * this.smoothingFactor + current * (1 - this.smoothingFactor);
-    }
-
-    async detectPose() {
-        if (!this.net || !this.videoElement.readyState === 4) {
-            return null;
-        }
-
-        try {
-            const pose = await this.net.estimateSinglePose(this.videoElement, {
-                flipHorizontal: false
-            });
-
-            if (pose && pose.keypoints) {
-                const smoothedPose = this.smoothPose(pose);
-                return smoothedPose;
-            }
-            return null;
-        } catch (error) {
-            console.error('❌ Error detecting pose:', error);
-            return null;
-        }
+    applyLowPassFilter(currentValue, previousValues) {
+        if (previousValues.length === 0) return currentValue;
+        const movingAvg = previousValues.reduce((sum, val) => sum + val, 0) / previousValues.length;
+        return this.alpha * currentValue + (1 - this.alpha) * movingAvg;
     }
 
     drawKeypoints(keypoints) {
-        this.ctx.save();
         keypoints.forEach(keypoint => {
             if (keypoint.score > 0.3) {
                 const { x, y } = keypoint.position;
-                const { outer, inner, text } = this.styles.keypoint;
 
                 // Draw outer circle
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, outer.radius, 0, 2 * Math.PI);
-                this.ctx.fillStyle = outer.color;
+                this.ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                 this.ctx.fill();
 
                 // Draw inner circle
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, inner.radius, 0, 2 * Math.PI);
-                this.ctx.fillStyle = inner.color;
+                this.ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                this.ctx.fillStyle = '#00ff88';
                 this.ctx.fill();
-
-                // Draw keypoint name
-                this.ctx.fillStyle = text.color;
-                this.ctx.font = text.font;
-                this.ctx.fillText(keypoint.part, x + text.offset.x, y + text.offset.y);
             }
         });
-        this.ctx.restore();
     }
 
     drawSkeleton(keypoints) {
-        this.ctx.save();
-        const keypointMap = {};
-        keypoints.forEach(keypoint => {
-            keypointMap[keypoint.part] = keypoint;
-        });
+        const adjacentKeyPoints = [
+            ['leftShoulder', 'rightShoulder'],
+            ['leftShoulder', 'leftElbow'],
+            ['leftElbow', 'leftWrist'],
+            ['rightShoulder', 'rightElbow'],
+            ['rightElbow', 'rightWrist'],
+            ['leftShoulder', 'leftHip'],
+            ['rightShoulder', 'rightHip'],
+            ['leftHip', 'rightHip'],
+            ['leftHip', 'leftKnee'],
+            ['leftKnee', 'leftAnkle'],
+            ['rightHip', 'rightKnee'],
+            ['rightKnee', 'rightAnkle']
+        ];
 
-        this.connectedKeypoints.forEach(([firstPart, secondPart]) => {
-            const firstKeypoint = keypointMap[firstPart];
-            const secondKeypoint = keypointMap[secondPart];
+        adjacentKeyPoints.forEach(([first, second]) => {
+            const firstKeypoint = keypoints.find(kp => kp.part === first);
+            const secondKeypoint = keypoints.find(kp => kp.part === second);
 
             if (firstKeypoint && secondKeypoint &&
                 firstKeypoint.score > 0.3 && secondKeypoint.score > 0.3) {
-                this.drawSegment(
-                    firstKeypoint.position,
-                    secondKeypoint.position
-                );
+                this.ctx.beginPath();
+                this.ctx.moveTo(firstKeypoint.position.x, firstKeypoint.position.y);
+                this.ctx.lineTo(secondKeypoint.position.x, secondKeypoint.position.y);
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeStyle = 'rgba(0, 255, 136, 0.7)';
+                this.ctx.stroke();
             }
         });
-        this.ctx.restore();
-    }
-
-    drawSegment(start, end) {
-        const { lineWidth, color } = this.styles.skeleton;
-        this.ctx.beginPath();
-        this.ctx.moveTo(start.x, start.y);
-        this.ctx.lineTo(end.x, end.y);
-        this.ctx.lineWidth = lineWidth;
-        this.ctx.strokeStyle = color;
-        this.ctx.stroke();
     }
 
     clearCanvas() {
         if (this.ctx) {
-            this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
     }
 
@@ -267,47 +298,129 @@ export class PoseDetector {
         }
 
         try {
-            const modelLoaded = await this.initialize();
-            if (!modelLoaded) throw new Error('Failed to load PoseNet model');
+            // Initialize MediaPipe if not already done
+            if (!this.poseLandmarker) {
+                await this.initialize();
+            }
 
+            // Clean up any existing state
+            await this.stop();
+
+            // Initialize camera
             await this.setupCamera();
+            console.log('✅ Camera setup complete');
+
+            // Wait for video to be ready
+            await new Promise((resolve) => {
+                const checkVideo = () => {
+                    if (this.video.readyState === 4) {
+                        resolve();
+                    } else {
+                        setTimeout(checkVideo, 100);
+                    }
+                };
+                checkVideo();
+            });
+
+            // Start detection loop
             this.isRunning = true;
             console.log('✅ Pose detection started');
             this.detectLoop();
+
+            return true;
         } catch (error) {
             console.error('❌ Error starting pose detection:', error);
+            await this.stop();
             throw error;
         }
     }
 
-    stop() {
+    async stop() {
         console.log('Stopping pose detection...');
         this.isRunning = false;
-        const stream = this.videoElement.srcObject;
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
+
+        try {
+            // Clean up video stream
+            const stream = this.video?.srcObject;
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    stream.removeTrack(track);
+                });
+            }
+
+            // Clear video element
+            if (this.video) {
+                this.video.srcObject = null;
+                this.video.load();
+            }
+
+            // Clear canvas
+            this.clearCanvas();
+
+            // Reset state
+            this.previousPoses = [];
+
+            console.log('✅ Pose detection stopped and cleaned up');
+            return true;
+        } catch (error) {
+            console.error('❌ Error stopping pose detection:', error);
+            return false;
         }
-        this.videoElement.srcObject = null;
-        this.clearCanvas();
-        console.log('✅ Pose detection stopped');
     }
 
     async detectLoop() {
         if (!this.isRunning) {
-            console.log('Pose detection loop stopped');
+            console.log('Detection stopped');
             return;
         }
 
-        const pose = await this.detectPose();
-        if (pose) {
-            this.clearCanvas();
-            this.drawSkeleton(pose.keypoints);
-            this.drawKeypoints(pose.keypoints);
-            if (window.exerciseDetector) {
-                window.exerciseDetector.analyzePose(pose);
+        try {
+            if (!this.video || !this.video.videoWidth || !this.video.videoHeight) {
+                console.log('Video not ready, retrying...');
+                requestAnimationFrame(() => this.detectLoop());
+                return;
             }
-        }
 
-        requestAnimationFrame(() => this.detectLoop());
+            // Get pose
+            const pose = await this.detectPose();
+
+            // Clear the canvas
+            this.clearCanvas();
+
+            if (pose && pose.keypoints) {
+                // Draw the pose
+                this.drawKeypoints(pose.keypoints);
+                this.drawSkeleton(pose.keypoints);
+
+                // Send pose data to callback if available
+                if (this.onPoseDetected && typeof this.onPoseDetected === 'function') {
+                    this.onPoseDetected(pose);
+                }
+            }
+
+            // Continue detection loop
+            requestAnimationFrame(() => this.detectLoop());
+        } catch (error) {
+            console.error('Error in pose detection loop:', error);
+            requestAnimationFrame(() => this.detectLoop());
+        }
+    }
+
+    calculateAngle(p1, p2, p3) {
+        const v1 = {
+            x: p1.x - p2.x,
+            y: p1.y - p2.y
+        };
+        const v2 = {
+            x: p3.x - p2.x,
+            y: p3.y - p2.y
+        };
+
+        const dotProduct = v1.x * v2.x + v1.y * v2.y;
+        const v1Mag = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+        const v2Mag = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+        const angleRad = Math.acos(dotProduct / (v1Mag * v2Mag));
+        return (angleRad * 180) / Math.PI;
     }
 } 

@@ -1,54 +1,33 @@
-# Fitnit - AI Fitness Tracker
+# Fitnit - AI Exercise Tracking
 
-An AI-powered fitness tracking application that uses computer vision to detect and analyze exercises in real-time.
+A web application for real-time exercise tracking and form analysis.
 
 ## Features
-
-- Real-time pose detection using TensorFlow.js and PoseNet
+- Real-time pose detection using MediaPipe Vision
 - Exercise form analysis and rep counting
-- Support for multiple exercises (push-ups, squats, crunches, dumbbell curls)
-- User authentication with Supabase
-- Exercise history tracking
+- Reference pose collection for improved accuracy
+- Beautiful and intuitive user interface
 
-## Tech Stack
-
-- Frontend: Vanilla JavaScript
-- AI/ML: TensorFlow.js, PoseNet
-- Backend: Supabase
-- Build Tool: Vite
+## Technologies Used
+- Frontend: HTML5, CSS3, JavaScript (ES6+)
+- AI/ML: MediaPipe Vision for pose detection and tracking
+- Backend: Supabase for authentication and data storage
+- Build: Vite for development and bundling
 
 ## Getting Started
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Start development server: `npm run dev`
+4. Open browser at `http://localhost:5173`
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/fitnit.git
-cd fitnit
-```
+## Available Exercises
+- Push-ups
+- Squats
+- Crunches
+- Dumbbell curls
 
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
-npm run dev
-```
-
-4. Open `http://localhost:3000` in your browser
-
-## Development
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-
-## Requirements
-
-- Modern web browser with WebGL support
-- Webcam/camera access
-- Node.js 14+
+## Contributing
+Feel free to submit issues and pull requests.
 
 ## License
-
-MIT 
+MIT License - see LICENSE file for details 

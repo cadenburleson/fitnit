@@ -4,55 +4,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitnit - AI Fitness Tracker</title>
-    <meta name="description"
-        content="AI-powered fitness tracking application for real-time exercise detection and analysis">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/utilities.css">
+    <title>Fitnit - Exercise Tracker</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .video-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            margin: 20px auto;
+        }
+
+        #video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .exercise-info {
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        #repCounter,
+        #formFeedback {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: opacity 0.3s;
+        }
+
+        #startWorkout {
+            background: #4CAF50;
+            color: white;
+        }
+
+        #login {
+            background: #2196F3;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 0 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
 
 <body>
-    <header class="header">
-        <nav class="nav">
-            <div class="logo">Fitnit</div>
-            <div class="nav-links">
-                <button id="startWorkout" class="btn btn-primary">Start Workout</button>
-                <button id="loginBtn" class="btn btn-secondary">Login</button>
-            </div>
-        </nav>
-    </header>
+    <h1>Exercise Tracker</h1>
+    <p>AI-powered exercise tracking and form analysis</p>
 
-    <main class="main">
-        <div id="cameraContainer" class="camera-container hidden">
-            <video id="video" playsinline></video>
-            <canvas id="overlay"></canvas>
-            <div class="exercise-stats">
-                <div id="repCounter">Reps: 0</div>
-                <div id="formFeedback">Form: Ready</div>
-            </div>
-        </div>
+    <div class="controls">
+        <select id="exerciseSelect">
+            <option value="pushup">Push-ups</option>
+            <option value="squat">Squats</option>
+            <option value="curl">Dumbbell Curls</option>
+        </select>
+        <button id="startWorkout">Start Tracking</button>
+        <button id="login">Login</button>
+    </div>
 
-        <div id="welcomeScreen" class="welcome-screen">
-            <h1>Welcome to Fitnit</h1>
-            <p>AI-powered exercise tracking and form analysis</p>
-            <div class="exercise-list">
-                <h2>Available Exercises:</h2>
-                <ul>
-                    <li>Push-ups</li>
-                    <li>Crunches</li>
-                    <li>Squats</li>
-                    <li>Dumbbell curls</li>
-                </ul>
-            </div>
-        </div>
-    </main>
+    <div class="video-container">
+        <video id="video" playsinline></video>
+        <canvas id="overlay"></canvas>
+    </div>
 
-    <!-- Load external dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
+    <div class="exercise-info">
+        <div id="exerciseType">Exercise: Push-ups</div>
+        <div id="repCounter">Reps: 0</div>
+        <div id="formFeedback">Form: Ready</div>
+    </div>
 
-    <!-- Load our application using Vite -->
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
     <script type="module" src="/src/js/main.js"></script>
 </body>
 

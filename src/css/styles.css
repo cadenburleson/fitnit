@@ -71,8 +71,15 @@ body {
     display: none;
 }
 
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
 #video {
-    position: absolute;
+    position: static;
     top: 0;
     left: 0;
     width: 100%;
@@ -98,8 +105,84 @@ body {
     color: white;
     padding: 16px;
     border-radius: 8px;
-    font-size: 18px;
-    z-index: 2;
+    font-size: 0.5em;
+}
+
+.detailed-exercise-stats {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 24px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detailed-exercise-stats h2 {
+    color: var(--text-color);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.exercise-controls {
+    background-color: var(--background-color);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.exercise-selector {
+    margin-top: 8px;
+}
+
+.exercise-dropdown {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: white;
+    font-size: 1rem;
+    width: 100%;
+    cursor: pointer;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.exercise-dropdown:hover {
+    border-color: var(--primary-color);
+}
+
+#exerciseType,
+#repCounter,
+#formFeedback {
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-item {
+    padding: 16px;
+    background-color: var(--background-color);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.stat-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--primary-color);
 }
 
 .welcome-screen {
@@ -181,4 +264,53 @@ body {
 
 .hidden {
     display: none !important;
+}
+
+/* Utility Classes */
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-4 {
+    margin-top: 16px;
+}
+
+.mb-4 {
+    margin-bottom: 16px;
+}
+
+.p-4 {
+    padding: 16px;
+}
+
+.rounded {
+    border-radius: 4px;
+}
+
+.shadow {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bg-white {
+    background-color: white;
+}
+
+#formFeedback.stat-value {
+    font-size: 1.2em;
 }
