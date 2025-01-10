@@ -1,5 +1,5 @@
 import { supabase } from './config.js';
-import { handleLogout } from './auth.js';
+import { auth, handleLogout } from './auth.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const accountForm = document.getElementById('accountForm');

@@ -1,3 +1,5 @@
+import { supabase } from './config.js';
+
 export class Auth {
     constructor() {
         this.loginBtn = document.getElementById('loginBtn');
@@ -167,4 +169,19 @@ export class Auth {
             console.error('Error saving exercise data:', error.message);
         }
     }
-} 
+}
+
+// Export a singleton instance
+export const auth = new Auth();
+
+// Export handleLogout function
+export const handleLogout = async () => {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        window.location.href = '/';
+    } catch (error) {
+        console.error('Error signing out:', error.message);
+        alert('Failed to sign out. Please try again.');
+    }
+}; 
