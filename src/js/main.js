@@ -1,5 +1,11 @@
 import { PoseDetector } from './poseDetection.js';
 import { ExerciseDetector } from './exerciseDetection.js';
+import { createClient } from '@supabase/supabase-js'
+
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 let app = null;
 
@@ -20,9 +26,16 @@ class App {
             this.exerciseType = document.getElementById('exerciseType');
             this.startButton = document.getElementById('startWorkout');
             this.exerciseSelect = document.getElementById('exerciseSelect');
+            this.loginButton = document.getElementById('login');
+            this.signupButton = document.getElementById('signup');
+            this.userProfile = document.querySelector('.user-profile');
+            this.userIcon = document.getElementById('userIcon');
+            this.userDropdown = document.getElementById('userDropdown');
+            this.logoutButton = document.getElementById('logoutButton');
 
             // Setup event listeners
             this.setupEventListeners();
+            this.setupAuthListeners();
 
             // Initialize the exercise detector with the default exercise
             this.exerciseDetector.setExercise(this.currentExercise);
@@ -33,6 +46,9 @@ class App {
                     this.onPoseDetected(pose);
                 }
             };
+
+            // Check initial auth state
+            await this.checkAuthState();
 
             // Initialize and start pose detection
             await this.poseDetector.start();
@@ -48,12 +64,57 @@ class App {
         this.startButton.addEventListener('click', () => this.toggleTracking());
         this.exerciseSelect.addEventListener('change', (e) => {
             this.currentExercise = e.target.value;
-            this.exerciseType.textContent = `Exercise: ${this.capitalizeFirstLetter(this.currentExercise)}s`;
             this.exerciseDetector.setExercise(this.currentExercise);
-            if (this.isTracking) {
-                this.stopTracking();
+            this.exerciseType.textContent = `Exercise: ${e.target.options[e.target.selectedIndex].text}`;
+        });
+
+        // User profile dropdown
+        this.userIcon?.addEventListener('click', () => {
+            this.userDropdown?.classList.toggle('active');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (this.userDropdown?.classList.contains('active') &&
+                !this.userProfile?.contains(e.target)) {
+                this.userDropdown.classList.remove('active');
             }
         });
+
+        // Logout button
+        this.logoutButton?.addEventListener('click', async () => {
+            try {
+                await supabase.auth.signOut();
+                window.location.reload();
+            } catch (error) {
+                console.error('Error signing out:', error);
+            }
+        });
+    }
+
+    setupAuthListeners() {
+        supabase.auth.onAuthStateChange((event, session) => {
+            this.updateAuthUI(session);
+        });
+    }
+
+    async checkAuthState() {
+        const { data: { session } } = await supabase.auth.getSession();
+        this.updateAuthUI(session);
+    }
+
+    updateAuthUI(session) {
+        if (session) {
+            // User is logged in
+            if (this.loginButton) this.loginButton.style.display = 'none';
+            if (this.signupButton) this.signupButton.style.display = 'none';
+            if (this.userProfile) this.userProfile.style.display = 'block';
+        } else {
+            // User is logged out
+            if (this.loginButton) this.loginButton.style.display = 'block';
+            if (this.signupButton) this.signupButton.style.display = 'block';
+            if (this.userProfile) this.userProfile.style.display = 'none';
+        }
     }
 
     capitalizeFirstLetter(string) {

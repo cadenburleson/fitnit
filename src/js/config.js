@@ -1,22 +1,13 @@
 // Supabase configuration
-const VITE_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const VITE_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Log environment variable status for debugging
-console.log('Environment variables status:', {
-    VITE_SUPABASE_URL: !!VITE_SUPABASE_URL,
-    VITE_SUPABASE_ANON_KEY: !!VITE_SUPABASE_ANON_KEY,
-    import_meta_env: import.meta.env
-});
+if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables. Please check your .env file.');
+}
 
-// Export with fallback values for development
-export const SUPABASE_URL = VITE_SUPABASE_URL || 'https://gigipaudayfboltnsnwi.supabase.co';
-export const SUPABASE_ANON_KEY = VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZ2lwYXVkYXlmYm9sdG5zbndpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU0NTI3MDgsImV4cCI6MjA1MTAyODcwOH0.JnQI48XvZiPKTkUQp6eORpQmELUBVMgu9thb2u5jugY';
-
-export const SUPABASE_CONFIG = {
-    url: SUPABASE_URL,
-    key: SUPABASE_ANON_KEY
-};
+// Initialize Supabase client
+export const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // Camera configuration
 export const CAMERA_CONFIG = {

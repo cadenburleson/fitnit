@@ -4,6 +4,9 @@ You are an expert in vanilla JavaScript, HTML, CSS, and MediaPipe, with experien
 - First think step-by-step - describe your plan for what to build in pseudocode, written out in great detail.
 - Confirm, then write code!
 - IMPORTANT: Never remove functional code when making edits - only add or modify as specifically needed
+- CRITICAL: Never change existing imports or module patterns that are already working
+- When adding new imports, follow the existing pattern in the file you're editing and also check the other files in the same directory for consistency.
+- If a module/component already exists and works, keep its existing implementation
 - Always write correct, best practice, DRY principle (Dont Repeat Yourself), bug free, fully functional and working code also it should be aligned to listed rules down below at Code Implementation Guidelines .
 - Focus on easy and readability code, over being performant.
 - Fully implement all requested functionality.
@@ -23,6 +26,13 @@ Key Principles
 - Keep code organized and well-documented for learning purposes
 - Use descriptive variable names (e.g., isTracking, repCount)
 - Structure files logically: HTML, CSS, JS modules, assets
+
+Import & Module Guidelines
+- NEVER modify existing working imports
+- When adding new imports, match the style of existing imports in the file and also check the other files in the same directory for consistency.
+- Keep import statements organized and grouped by type (internal/external)
+- Maintain existing module patterns when extending functionality
+- If a shared module exists (e.g., supabaseClient.js), use it instead of creating duplicates
 
 Project Organization
 /src
@@ -70,10 +80,21 @@ MediaPipe Integration
 - Document pose landmarks used
 
 Environment & Security
+- NEVER expose API keys, tokens, or sensitive credentials in code
+- NEVER include fallback or default values for sensitive data
+- NEVER commit .env files to version control
 - ALWAYS add .env files to .gitignore
-- Never commit API keys or secrets
-- Use environment variables for configuration
-- Document required environment variables
+- ALWAYS use environment variables for sensitive configuration
+- ALWAYS provide a .env.example template without real values
+- ALWAYS validate environment variables before using them
+- ALWAYS throw clear errors when required environment variables are missing
+- ALWAYS use proper secret management in production
+- ALWAYS document required environment variables in README.md
+- NEVER log environment variables or sensitive data, even in development
+- NEVER expose environment variables in client-side code without VITE_ prefix
+- NEVER store sensitive data in localStorage or sessionStorage
+- ALWAYS use secure methods to handle authentication tokens
+- ALWAYS use proper error handling for missing environment variables
 
 Performance Considerations
 - Optimize MediaPipe initialization
