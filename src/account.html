@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings - Fitnit</title>
-    <link rel="stylesheet" href="../styles/styles.css">
-    <link rel="stylesheet" href="../styles/account.css">
+    <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
@@ -22,8 +21,9 @@
         <form id="accountForm" class="account-form">
             <div class="profile-section">
                 <div class="profile-section__upload">
-                    <img id="profilePreview" src="https://via.placeholder.com/150" alt="Profile picture"
-                        class="profile-section__picture">
+                    <div id="profilePreview" class="profile-section__picture">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
                     <label for="profilePicture" class="profile-section__upload-overlay">
                         <i class="fas fa-camera"></i>
                     </label>
@@ -61,7 +61,7 @@
         </div>
     </div>
 
-    <script type="module" src="../js/account.js"></script>
+    <script type="module" src="/js/account.js"></script>
 </body>
 
 </html>
