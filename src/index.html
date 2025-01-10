@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fitnit - Exercise Tracker</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
@@ -21,6 +22,15 @@
             <button id="startWorkout">Start Tracking</button>
             <button id="login" onclick="window.location.href='login.html'">Login</button>
             <button id="signup" onclick="window.location.href='signup.html'">Sign Up</button>
+            <div class="user-profile">
+                <div class="user-icon" id="userIcon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="/account.html">My Account</a>
+                    <button class="logout" id="logoutButton">Logout</button>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -32,7 +42,6 @@
 
         <div class="exercise-info">
             <div class="exercise-info-content">
-                <button class="dock-button" title="Toggle position">📌</button>
                 <div id="repCounter">Reps: 0</div>
                 <div id="exerciseType">Exercise: Push-ups</div>
                 <div id="formFeedback">Form: Ready</div>
@@ -47,59 +56,12 @@
     <script type="module" src="/js/main.js"></script>
 
     <script>
-        const exerciseInfo = document.querySelector('.exercise-info');
-        const dockButton = exerciseInfo.querySelector('.dock-button');
         const startButton = document.getElementById('startWorkout');
-        let isDragging = false;
-
-        // Dock/undock functionality
-        dockButton.addEventListener('click', () => {
-            exerciseInfo.classList.toggle('docked');
-        });
 
         // Update start button appearance
         startButton.addEventListener('click', () => {
             startButton.classList.toggle('tracking');
             startButton.textContent = startButton.classList.contains('tracking') ? 'Stop Tracking' : 'Start Tracking';
-        });
-
-        // Drag functionality
-        exerciseInfo.addEventListener('mousedown', (e) => {
-            if (e.target === dockButton || exerciseInfo.classList.contains('docked')) return;
-            isDragging = true;
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                requestAnimationFrame(() => {
-                    exerciseInfo.style.left = (e.pageX - exerciseInfo.offsetWidth / 2) + 'px';
-                    exerciseInfo.style.top = (e.pageY - 20) + 'px';
-                });
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-
-        // Touch support
-        exerciseInfo.addEventListener('touchstart', (e) => {
-            if (e.target === dockButton || exerciseInfo.classList.contains('docked')) return;
-            isDragging = true;
-        });
-
-        document.addEventListener('touchmove', (e) => {
-            if (isDragging) {
-                const touch = e.touches[0];
-                requestAnimationFrame(() => {
-                    exerciseInfo.style.left = (touch.pageX - exerciseInfo.offsetWidth / 2) + 'px';
-                    exerciseInfo.style.top = (touch.pageY - 20) + 'px';
-                });
-            }
-        });
-
-        document.addEventListener('touchend', () => {
-            isDragging = false;
         });
     </script>
 </body>
