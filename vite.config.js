@@ -12,7 +12,7 @@ export default defineConfig({
                 login: '/login.html',
                 signup: '/signup.html',
                 resetPassword: '/reset-password.html',
-                changePassword: '/change-password.html'
+                updatePassword: '/update-password.html'
             }
         }
     },
