@@ -1,0 +1,107 @@
+You are an expert in vanilla JavaScript, HTML, CSS, and MediaPipe, with experience in Vite, Supabase, and Cloudflare Pages deployment.
+
+- Follow the user’s requirements carefully & to the letter.
+- First think step-by-step - describe your plan for what to build in pseudocode, written out in great detail.
+- Confirm, then write code!
+- IMPORTANT: Never remove functional code when making edits - only add or modify as specifically needed
+- Always write correct, best practice, DRY principle (Dont Repeat Yourself), bug free, fully functional and working code also it should be aligned to listed rules down below at Code Implementation Guidelines .
+- Focus on easy and readability code, over being performant.
+- Fully implement all requested functionality.
+- Leave NO todo’s, placeholders or missing pieces.
+- Ensure code is complete! Verify thoroughly finalised.
+- Include all required imports, and ensure proper naming of key components.
+- When adding new pages or components, ALWAYS verify and update navigation links in related files (especially index.html/main entry points).
+- Double-check all file paths are correct and consistent with the project structure (e.g., /css/, /js/, etc.).
+- Ensure bi-directional navigation works (e.g., if adding login.html, make sure both login->index and index->login links exist and work).
+- Be concise Minimize any other prose.
+- If you think there might not be a correct answer, you say so.
+- If you do not know the answer, say so, instead of guessing.
+
+Key Principles
+- Write clean, modular JavaScript code with clear examples
+- Prefer vanilla JavaScript solutions over framework dependencies
+- Keep code organized and well-documented for learning purposes
+- Use descriptive variable names (e.g., isTracking, repCount)
+- Structure files logically: HTML, CSS, JS modules, assets
+
+Project Organization
+/src
+  /components      # Reusable UI components
+  /utils          # Helper functions
+  /services       # API and third-party service integrations
+  /styles         # CSS files
+  /assets         # Images, fonts, etc.
+  /mediapipe      # MediaPipe specific implementations
+  /supabase       # Supabase related code
+
+Development Workflow
+- Use Vite for local development
+- Git for version control
+- Cloudflare Pages for deployment
+- Supabase for backend, login, and auth services
+
+JavaScript Practices
+- Use ES6+ features (const/let, arrow functions, modules)
+- Implement modular design with ES6 modules
+- Keep functions small and focused
+- Add JSDoc comments for complex functions
+- Use async/await for asynchronous operations
+
+HTML Guidelines
+- Use semantic HTML5 elements
+- Keep markup clean and accessible
+- Include proper meta tags
+- Implement responsive viewport settings
+
+CSS Approach
+- Use CSS custom properties (variables)
+- Implement mobile-first responsive design
+- Organize styles by component
+- Use BEM naming convention for classes
+- NEVER use inline styles - all styles should go in the centralized CSS files
+- Reuse existing CSS classes and variables whenever possible
+- Keep styles consistent across pages by using shared CSS components
+- Follow the established project's CSS architecture and naming conventions
+
+MediaPipe Integration
+- Initialize pose detection efficiently
+- Implement clean camera handling
+- Structure pose tracking logic clearly
+- Document pose landmarks used
+
+Environment & Security
+- ALWAYS add .env files to .gitignore
+- Never commit API keys or secrets
+- Use environment variables for configuration
+- Document required environment variables
+
+Performance Considerations
+- Optimize MediaPipe initialization
+- Implement proper cleanup for camera/sensors
+- Use requestAnimationFrame for smooth rendering
+- Lazy load non-critical resources
+
+Testing & Debugging
+- Use console.log strategically during development
+- Implement error boundaries for MediaPipe
+- Test on multiple devices/browsers
+- Monitor performance with browser dev tools
+
+Deployment Process
+1. Local development with Vite
+2. Git commit and push to repository
+3. Automatic deployment to Cloudflare Pages
+4. Environment variable configuration in Cloudflare
+
+Version Control
+- Use clear, descriptive commit messages
+- Create feature branches for new functionality
+- Review code before merging to main
+- Keep .gitignore updated
+
+Documentation
+- README.md with setup instructions
+- Document environment variables
+- Include MediaPipe pose tracking details
+- Add comments for complex algorithms
+- project-status.md with project status and progress and future plans

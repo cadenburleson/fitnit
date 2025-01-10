@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - Fitnit</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="stylesheet" href="../styles/account.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <nav class="navigation">
+        <div class="controls">
+            <a href="/" class="logo">Fitnit</a>
+        </div>
+    </nav>
+
+    <div class="account-container">
+        <h2 class="account-title">Account Settings</h2>
+        <form id="accountForm" class="account-form">
+            <div class="profile-section">
+                <div class="profile-section__upload">
+                    <img id="profilePreview" src="https://via.placeholder.com/150" alt="Profile picture"
+                        class="profile-section__picture">
+                    <label for="profilePicture" class="profile-section__upload-overlay">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                    <input type="file" id="profilePicture" accept="image/*" class="profile-section__upload-input">
+                </div>
+            </div>
+            <div class="account-form__group">
+                <label for="displayName" class="account-form__label">Display Name</label>
+                <input type="text" id="displayName" name="displayName" required class="account-form__input">
+            </div>
+            <div class="account-form__group">
+                <label for="email" class="account-form__label">Email</label>
+                <input type="email" id="email" name="email" readonly class="account-form__input">
+            </div>
+            <button type="submit" class="account-form__save-btn">Save Changes</button>
+        </form>
+        <button id="logoutBtn" class="account-form__logout-btn">Logout</button>
+
+        <div class="stats-section">
+            <h3 class="stats-section__title">Workout Statistics</h3>
+            <div class="stats-section__grid">
+                <div class="stats-section__chart">
+                    <canvas id="repsChart"></canvas>
+                </div>
+                <div class="stats-section__chart">
+                    <canvas id="formChart"></canvas>
+                </div>
+                <div class="stats-section__chart">
+                    <canvas id="frequencyChart"></canvas>
+                </div>
+                <div class="stats-section__chart">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/account.js"></script>
+</body>
+
+</html>

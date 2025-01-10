@@ -1,3 +1,10 @@
+import { createClient } from '@supabase/supabase-js'
+
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('signupForm');
 
@@ -25,14 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Here you would typically make an API call to create the account
-            // For now, we'll just simulate success
-            console.log('Account creation successful');
-            // Redirect to login page
-            window.location.href = '/login.html';
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/login.html`
+                }
+            })
+
+            if (error) throw error
+
+            // Always show the email confirmation message since Supabase requires it
+            alert('Please check your email to confirm your account before logging in.\n\nIf you don\'t see the email, please check your spam folder.');
+
+            // Redirect to a confirmation page or login with a message
+            window.location.href = '/login.html?status=confirm';
         } catch (error) {
-            console.error('Error creating account:', error);
-            alert('Error creating account. Please try again.');
+            console.error('Error creating account:', error.message);
+            alert('Error creating account: ' + error.message);
         }
     });
 }); 
