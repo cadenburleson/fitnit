@@ -1,4 +1,4 @@
-import { supabase } from './config.js';
+import { supabase } from './supabaseClient.js';
 
 export class Auth {
     constructor() {
@@ -21,16 +21,12 @@ export class Auth {
 
     async checkSession() {
         try {
-            if (!window.supabase) {
-                console.warn('Supabase not initialized, running in offline mode');
-                return false;
-            }
-            const session = await window.supabase.auth.getSession();
-            this.updateUIState(!!session.data.session);
-            return !!session.data.session;
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) throw error;
+            return session;
         } catch (error) {
-            console.error('Error checking session:', error);
-            return false;
+            console.error('Error checking session:', error.message);
+            return null;
         }
     }
 
@@ -57,7 +53,7 @@ export class Auth {
         if (!password) return;
 
         try {
-            const { data, error } = await window.supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password
             });
@@ -82,7 +78,7 @@ export class Auth {
         if (!password) return;
 
         try {
-            const { data, error } = await window.supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
             });
@@ -102,7 +98,7 @@ export class Auth {
         }
 
         try {
-            const { error } = await window.supabase.auth.signOut();
+            const { error } = await supabase.auth.signOut();
             if (error) throw error;
             this.updateUIState(false);
         } catch (error) {
@@ -123,19 +119,12 @@ export class Auth {
 
     async getCurrentUser() {
         try {
-            if (!window.supabase) {
-                console.warn('Supabase not initialized, returning null user');
-                return null;
-            }
-            const { data: { user }, error } = await window.supabase.auth.getUser();
-            if (error) {
-                console.error('Error getting user:', error.message);
-                return null;
-            }
-            return user;
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error) throw error;
+            return { user, error: null };
         } catch (error) {
-            console.error('Error getting user:', error);
-            return null;
+            console.error('Error getting current user:', error.message);
+            return { user: null, error };
         }
     }
 
@@ -152,7 +141,7 @@ export class Auth {
                 return;
             }
 
-            const { error } = await window.supabase
+            const { error } = await supabase
                 .from('exercise_history')
                 .insert([
                     {

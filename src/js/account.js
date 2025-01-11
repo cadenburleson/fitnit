@@ -1,97 +1,312 @@
-import { supabase } from './config.js';
-import { auth, handleLogout } from './auth.js';
+import { supabase } from './supabaseClient.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const accountForm = document.getElementById('accountForm');
-    const displayNameInput = document.getElementById('displayName');
-    const emailInput = document.getElementById('email');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const profilePicture = document.getElementById('profilePicture');
-    const profilePreview = document.getElementById('profilePreview');
+// DOM Elements
+const accountForm = document.getElementById('accountForm');
+const profilePicture = document.getElementById('profilePicture');
+const profilePreview = document.getElementById('profilePreview');
+const displayNameInput = document.getElementById('displayName');
+const emailInput = document.getElementById('email');
+const logoutBtn = document.getElementById('logoutBtn');
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+// Initialize page
+async function initializePage() {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (!user) {
         window.location.href = '/login.html';
         return;
     }
 
-    // Load user data
-    const { data: profile } = await supabase
+    emailInput.value = user.email;
+    await loadProfile(user.id);
+    await loadWorkoutStats(user.id);
+}
+
+// Profile Management
+async function loadProfile(userId) {
+    const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
+
+    if (error) {
+        console.error('Error loading profile:', error);
+        return;
+    }
 
     if (profile) {
         displayNameInput.value = profile.display_name || '';
-        emailInput.value = user.email;
+        if (profile.avatar_url) {
+            profilePreview.innerHTML = `<img src="${profile.avatar_url}" alt="Profile Picture">`;
+        }
+    }
+}
+
+async function updateProfile(event) {
+    event.preventDefault();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const updates = {
+        id: user.id,
+        display_name: displayNameInput.value,
+        updated_at: new Date()
+    };
+
+    const { error } = await supabase.from('profiles').upsert(updates);
+
+    if (error) {
+        console.error('Error updating profile:', error);
+    } else {
+        alert('Profile updated successfully!');
+    }
+}
+
+async function uploadAvatar(event) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+        console.error('Error uploading avatar:', uploadError);
+        return;
     }
 
-    // Handle form submission
-    accountForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
 
-        const updates = {
-            id: user.id,
-            display_name: displayNameInput.value,
-            updated_at: new Date()
-        };
+    const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
 
-        const { error } = await supabase
-            .from('profiles')
-            .upsert(updates);
+    if (!updateError) {
+        profilePreview.innerHTML = `<img src="${publicUrl}" alt="Profile Picture">`;
+    }
+}
 
-        if (error) {
-            alert('Error updating profile!');
-        } else {
-            alert('Profile updated successfully!');
+// Workout Statistics
+async function loadWorkoutStats(userId) {
+    const { data: exerciseHistory, error } = await supabase
+        .from('exercise_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error loading exercise history:', error);
+        return;
+    }
+
+    if (!exerciseHistory || exerciseHistory.length === 0) {
+        document.querySelectorAll('.stats-section__chart').forEach(chart => {
+            chart.innerHTML = '<p class="no-data">No workout data available yet. Start exercising to see your stats!</p>';
+        });
+        return;
+    }
+
+    createRepsChart(exerciseHistory);
+    createFormScoreChart(exerciseHistory);
+    createFrequencyChart(exerciseHistory);
+    createDistributionChart(exerciseHistory);
+}
+
+function createRepsChart(exerciseHistory) {
+    const repsData = exerciseHistory.reduce((acc, exercise) => {
+        acc[exercise.exercise_type] = (acc[exercise.exercise_type] || 0) + exercise.reps;
+        return acc;
+    }, {});
+
+    const ctx = document.getElementById('repsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(repsData),
+            datasets: [{
+                label: 'Total Reps',
+                data: Object.values(repsData),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 5
+                    }
+                }
+            }
         }
     });
+}
 
-    // Handle profile picture upload
-    profilePicture.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
-
-        // Upload the file
-        const { error: uploadError } = await supabase.storage
-            .from('profiles')
-            .upload(filePath, file, { upsert: true });
-
-        if (uploadError) {
-            alert('Error uploading profile picture!');
-            return;
-        }
-
-        // Get the public URL
-        const { data: { publicUrl } } = supabase.storage
-            .from('profiles')
-            .getPublicUrl(filePath);
-
-        // Update the profile with the new avatar URL
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .upsert({
-                id: user.id,
-                avatar_url: publicUrl,
-                updated_at: new Date()
-            });
-
-        if (updateError) {
-            alert('Error updating profile with new avatar!');
+function createFormScoreChart(exerciseHistory) {
+    const formScores = exerciseHistory.reduce((acc, exercise) => {
+        const date = new Date(exercise.created_at).toLocaleDateString();
+        if (!acc[date]) {
+            acc[date] = {
+                total: exercise.form_score,
+                count: 1
+            };
         } else {
-            // Update preview
-            const icon = profilePreview.querySelector('i');
-            if (icon) icon.remove();
-            profilePreview.style.backgroundImage = `url(${publicUrl})`;
+            acc[date].total += exercise.form_score;
+            acc[date].count++;
+        }
+        return acc;
+    }, {});
+
+    const averageScores = Object.entries(formScores).map(([date, data]) => ({
+        date,
+        score: data.total / data.count
+    }));
+
+    const ctx = document.getElementById('formChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: averageScores.map(score => score.date),
+            datasets: [{
+                label: 'Average Form Score',
+                data: averageScores.map(score => score.score),
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20
+                    }
+                }
+            }
         }
     });
+}
 
-    // Handle logout
-    logoutBtn.addEventListener('click', handleLogout);
-}); 
+function createFrequencyChart(exerciseHistory) {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toLocaleDateString();
+    }).reverse();
+
+    const workoutDays = exerciseHistory.reduce((acc, exercise) => {
+        const date = new Date(exercise.created_at).toLocaleDateString();
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+    }, {});
+
+    const frequencyData = last7Days.map(date => workoutDays[date] || 0);
+
+    const ctx = document.getElementById('frequencyChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: last7Days,
+            datasets: [{
+                label: 'Workouts per Day',
+                data: frequencyData,
+                backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createDistributionChart(exerciseHistory) {
+    const exerciseTypes = exerciseHistory.reduce((acc, exercise) => {
+        acc[exercise.exercise_type] = (acc[exercise.exercise_type] || 0) + 1;
+        return acc;
+    }, {});
+
+    const colors = [
+        'rgba(255, 99, 132, 0.6)',
+        'rgba(54, 162, 235, 0.6)',
+        'rgba(255, 206, 86, 0.6)',
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(153, 102, 255, 0.6)'
+    ];
+
+    const ctx = document.getElementById('distributionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(exerciseTypes),
+            datasets: [{
+                data: Object.values(exerciseTypes),
+                backgroundColor: colors.slice(0, Object.keys(exerciseTypes).length),
+                borderColor: colors.slice(0, Object.keys(exerciseTypes).length).map(color => color.replace('0.6', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Event Listeners
+accountForm.addEventListener('submit', updateProfile);
+profilePicture.addEventListener('change', uploadAvatar);
+logoutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login.html';
+});
+
+// Initialize the page
+initializePage(); 

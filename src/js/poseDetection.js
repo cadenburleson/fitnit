@@ -15,7 +15,13 @@ export class PoseDetector {
         this.previousPoses = [];
         this.windowSize = 5; // Number of frames to average
         this.alpha = 0.3; // Low-pass filter coefficient
-        this.minConfidence = 0.2; // Lowered from 0.3 for better detection
+        this.minConfidence = 0.3;
+
+        // Frame rate control
+        this.lastFrameTime = 0;
+        this.targetFPS = 30; // Target frames per second
+        this.frameInterval = 1000 / this.targetFPS;
+        this.rafId = null; // Store requestAnimationFrame ID
     }
 
     async initialize() {
@@ -32,11 +38,9 @@ export class PoseDetector {
                 },
                 runningMode: "VIDEO",
                 numPoses: 1,
-                minPoseDetectionConfidence: 0.2,
-                minPosePresenceConfidence: 0.2,
-                minTrackingConfidence: 0.2,
-                outputSegmentation: false,
-                smoothLandmarks: true
+                minPoseDetectionConfidence: 0.5,
+                minPosePresenceConfidence: 0.5,
+                minTrackingConfidence: 0.5
             });
 
             console.log('✅ MediaPipe Vision initialized');
@@ -142,12 +146,6 @@ export class PoseDetector {
             const results = await this.poseLandmarker.detectForVideo(this.video, startTimeMs);
 
             if (results.landmarks && results.landmarks.length > 0) {
-                // Add image dimensions to the detection results
-                results.imageDimensions = {
-                    width: this.video.width,
-                    height: this.video.height
-                };
-
                 // Convert MediaPipe landmarks to our app's keypoint format
                 const pose = this.convertToCompatibleFormat(results.landmarks[0]);
                 const smoothedPose = this.smoothPose(pose);
@@ -162,6 +160,7 @@ export class PoseDetector {
     }
 
     convertToCompatibleFormat(landmarks) {
+        // Map MediaPipe landmarks to our app's keypoint format for exercise detection
         const keypointMap = {
             0: 'nose',
             11: 'leftShoulder',
@@ -179,21 +178,12 @@ export class PoseDetector {
         };
 
         const keypoints = [];
-        let totalVisibility = 0;
-        let visiblePoints = 0;
-
         for (const [index, part] of Object.entries(keypointMap)) {
             const landmark = landmarks[parseInt(index)];
-            const visibility = landmark.visibility || 0;
-            totalVisibility += visibility;
-            if (visibility > this.minConfidence) {
-                visiblePoints++;
-            }
-
             keypoints.push({
                 part,
                 index: parseInt(index),
-                score: visibility,
+                score: landmark.visibility || 0,
                 position: {
                     x: landmark.x * this.canvas.width,
                     y: landmark.y * this.canvas.height
@@ -355,6 +345,12 @@ export class PoseDetector {
         console.log('Stopping pose detection...');
         this.isRunning = false;
 
+        // Cancel any pending animation frame
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+
         try {
             // Clean up video stream
             const stream = this.video?.srcObject;
@@ -376,6 +372,7 @@ export class PoseDetector {
 
             // Reset state
             this.previousPoses = [];
+            this.lastFrameTime = 0;
 
             console.log('✅ Pose detection stopped and cleaned up');
             return true;
@@ -388,13 +385,28 @@ export class PoseDetector {
     async detectLoop() {
         if (!this.isRunning) {
             console.log('Detection stopped');
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
             return;
         }
 
         try {
+            const currentTime = performance.now();
+            const elapsed = currentTime - this.lastFrameTime;
+
+            // Skip frame if not enough time has elapsed
+            if (elapsed < this.frameInterval) {
+                this.rafId = requestAnimationFrame(() => this.detectLoop());
+                return;
+            }
+
+            this.lastFrameTime = currentTime - (elapsed % this.frameInterval);
+
             if (!this.video || !this.video.videoWidth || !this.video.videoHeight) {
                 console.log('Video not ready, retrying...');
-                requestAnimationFrame(() => this.detectLoop());
+                this.rafId = requestAnimationFrame(() => this.detectLoop());
                 return;
             }
 
@@ -416,10 +428,10 @@ export class PoseDetector {
             }
 
             // Continue detection loop
-            requestAnimationFrame(() => this.detectLoop());
+            this.rafId = requestAnimationFrame(() => this.detectLoop());
         } catch (error) {
             console.error('Error in pose detection loop:', error);
-            requestAnimationFrame(() => this.detectLoop());
+            this.rafId = requestAnimationFrame(() => this.detectLoop());
         }
     }
 

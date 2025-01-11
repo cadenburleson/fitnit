@@ -46,26 +46,28 @@
             <h3 class="stats-section__title">Workout Statistics</h3>
             <div class="stats-section__grid">
                 <div class="stats-section__chart">
+                    <h4>Total Reps by Exercise Type</h4>
                     <canvas id="repsChart"></canvas>
                 </div>
                 <div class="stats-section__chart">
+                    <h4>Form Score Progress</h4>
                     <canvas id="formChart"></canvas>
                 </div>
                 <div class="stats-section__chart">
+                    <h4>Workout Frequency</h4>
                     <canvas id="frequencyChart"></canvas>
                 </div>
                 <div class="stats-section__chart">
+                    <h4>Exercise Type Distribution</h4>
                     <canvas id="distributionChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Load Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-    <!-- Load account.js -->
-    <script type="module" src="./js/account.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="js/account.js"></script>
 </body>
 
 </html>

@@ -605,6 +605,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+}
+
+.user-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .user-icon i {
@@ -765,15 +772,23 @@ body {
     align-items: center;
     justify-content: center;
     transition: border-color 0.2s;
+    overflow: hidden;
 }
 
-.profile-section__picture:hover {
-    border-color: var(--secondary-color);
+.profile-section__picture img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .profile-section__picture i {
     font-size: 80px;
     color: var(--primary-color);
+}
+
+.profile-section__picture:hover {
+    border-color: var(--secondary-color);
 }
 
 .profile-section__upload-overlay {
@@ -824,10 +839,31 @@ body {
 }
 
 .stats-section__chart {
-    background: #f9f9f9;
-    padding: 1.5rem;
+    background: white;
+    padding: 20px;
     border-radius: 8px;
-    min-height: 250px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    min-height: 300px;
+}
+
+.stats-section__chart h4 {
+    margin-bottom: 16px;
+    color: var(--text-color);
+    text-align: center;
+    font-size: 1.1em;
+}
+
+.stats-section__chart canvas {
+    width: 100% !important;
+    height: 250px !important;
+}
+
+.stats-section__chart .no-data {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px 20px;
 }
 
 @media (max-width: 768px) {
@@ -842,5 +878,13 @@ body {
 
     .stats-section__grid {
         grid-template-columns: 1fr;
+    }
+
+    .stats-section__chart {
+        min-height: 250px;
+    }
+
+    .stats-section__chart canvas {
+        height: 200px !important;
     }
 }

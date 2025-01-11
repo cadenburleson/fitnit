@@ -21,20 +21,22 @@ export const CAMERA_CONFIG = {
 export const UI_CONFIG = {
     drawKeypoints: true,
     drawSkeleton: true,
-    minConfidence: 0.2,
+    minConfidence: 0.3,
     lineWidth: 2,
     pointRadius: 4,
     pointColor: '#00ff88',
     lineColor: 'rgba(0, 255, 136, 0.7)',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)'
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    showPoseVisualization: true,
+    debugMode: false,
 };
 
 export const MEDIAPIPE_CONFIG = {
-    modelType: 'lite', // 'lite', 'full', or 'heavy'
-    delegate: 'GPU', // 'GPU' or 'CPU'
-    minPoseDetectionConfidence: 0.5,
-    minPosePresenceConfidence: 0.5,
-    minTrackingConfidence: 0.5,
+    modelType: 'lite',
+    delegate: 'GPU',
+    minPoseDetectionConfidence: 0.3,
+    minPosePresenceConfidence: 0.3,
+    minTrackingConfidence: 0.3,
     smoothLandmarks: true,
     enableSegmentation: false,
     smoothSegmentation: true,

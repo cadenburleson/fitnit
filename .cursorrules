@@ -26,6 +26,9 @@ Key Principles
 - Keep code organized and well-documented for learning purposes
 - Use descriptive variable names (e.g., isTracking, repCount)
 - Structure files logically: HTML, CSS, JS modules, assets
+- ALWAYS read and understand existing code before suggesting changes
+- NEVER suggest changes to working code that would essentially rewrite it with the same content
+- When fixing issues, first verify if the "broken" code is actually broken
 
 Import & Module Guidelines
 - NEVER modify existing working imports

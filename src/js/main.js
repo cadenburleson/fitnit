@@ -1,11 +1,6 @@
 import { PoseDetector } from './poseDetection.js';
 import { ExerciseDetector } from './exerciseDetection.js';
-import { createClient } from '@supabase/supabase-js'
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { supabase } from './supabaseClient.js';
 
 let app = null;
 
@@ -16,6 +11,7 @@ class App {
         this.isTracking = false;
         this.currentExercise = 'pushup';
         this.initialized = false;
+        this.startTime = null;
     }
 
     async initialize() {
@@ -43,6 +39,7 @@ class App {
             // Set up pose detection callback
             this.poseDetector.onPoseDetected = (pose) => {
                 if (this.isTracking && pose) {
+                    // console.log('Pose received in App:', pose);
                     this.onPoseDetected(pose);
                 }
             };
@@ -103,17 +100,44 @@ class App {
         this.updateAuthUI(session);
     }
 
-    updateAuthUI(session) {
+    async loadUserProfile(userId) {
+        try {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('avatar_url')
+                .eq('id', userId)
+                .single();
+
+            if (error) throw error;
+
+            if (profile?.avatar_url) {
+                const userIcon = document.getElementById('userIcon');
+                userIcon.innerHTML = `<img src="${profile.avatar_url}" alt="Profile Picture">`;
+            }
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+        }
+    }
+
+    async updateAuthUI(session) {
         if (session) {
             // User is logged in
             if (this.loginButton) this.loginButton.style.display = 'none';
             if (this.signupButton) this.signupButton.style.display = 'none';
             if (this.userProfile) this.userProfile.style.display = 'block';
+
+            // Load and display user's profile picture if they have one
+            await this.loadUserProfile(session.user.id);
         } else {
             // User is logged out
             if (this.loginButton) this.loginButton.style.display = 'block';
             if (this.signupButton) this.signupButton.style.display = 'block';
             if (this.userProfile) this.userProfile.style.display = 'none';
+
+            // Reset to default icon
+            if (this.userIcon) {
+                this.userIcon.innerHTML = '<i class="fas fa-user-circle"></i>';
+            }
         }
     }
 
@@ -131,23 +155,93 @@ class App {
 
     startTracking() {
         this.isTracking = true;
+        this.startTime = new Date();
         this.startButton.textContent = 'Stop Tracking';
         this.exerciseDetector.resetState();
         this.repCounter.textContent = 'Reps: 0';
         this.formFeedback.textContent = 'Form: Ready';
     }
 
-    stopTracking() {
+    async stopTracking() {
         this.isTracking = false;
         this.startButton.textContent = 'Start Tracking';
+
+        // Save exercise data if user is logged in
+        await this.saveExerciseData();
     }
 
     onPoseDetected(pose) {
-        const result = this.exerciseDetector.detectExercise(pose);
+        // Log the incoming pose data
+        // console.log('Pose received in App:', pose);
+
+        if (!this.isTracking || !pose || !pose.keypoints) {
+            return;
+        }
+
+        // Create a clean copy of the pose data to prevent mutation
+        const poseData = {
+            keypoints: [...pose.keypoints],
+            score: pose.score
+        };
+
+        // Pass the clean pose data to exercise detector
+        const result = this.exerciseDetector.detectExercise(poseData);
         if (result) {
             this.repCounter.textContent = `Reps: ${result.reps}`;
             this.formFeedback.textContent = `Form: ${result.feedback}`;
         }
+    }
+
+    async saveExerciseData() {
+        try {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError) throw userError;
+
+            if (!user) {
+                console.log('User not logged in, skipping exercise data save');
+                return;
+            }
+
+            const endTime = new Date();
+            const duration = this.startTime ? Math.round((endTime - this.startTime) / 1000) : 0;
+
+            const exerciseData = {
+                user_id: user.id,
+                exercise_type: this.currentExercise,
+                reps: parseInt(this.repCounter.textContent.split(': ')[1]),
+                duration: duration,
+                form_score: this.calculateFormScore(),
+                created_at: new Date().toISOString()
+            };
+
+            console.log('Saving exercise data:', exerciseData);
+
+            const { error } = await supabase
+                .from('exercise_history')
+                .insert([{
+                    user_id: exerciseData.user_id,
+                    exercise_type: exerciseData.exercise_type,
+                    reps: exerciseData.reps,
+                    duration: Math.round(exerciseData.duration),
+                    form_score: exerciseData.form_score,
+                    created_at: new Date().toISOString()
+                }]);
+
+            if (error) throw error;
+            console.log('Exercise data saved successfully');
+
+        } catch (error) {
+            console.error('Error saving exercise data:', error.message);
+        }
+    }
+
+    calculateFormScore() {
+        // Extract form feedback and calculate a score based on feedback text
+        const feedback = this.formFeedback.textContent.split(': ')[1];
+        if (feedback.includes('Good')) return 100;
+        if (feedback.includes('Adjust')) return 75;
+        if (feedback.includes('Check')) return 50;
+        return 25; // Default score for other cases
     }
 }
 

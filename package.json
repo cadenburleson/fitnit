@@ -10,7 +10,7 @@
     },
     "dependencies": {
         "@mediapipe/tasks-vision": "^0.10.20",
-        "@supabase/supabase-js": "^2.39.3"
+        "@supabase/supabase-js": "^2.47.12"
     },
     "devDependencies": {
         "vite": "^5.0.12"

@@ -115,8 +115,7 @@ export class ExerciseDetector {
         const hasRequiredKeypoints = requiredKeypoints.every(kp => keypoints[kp]);
 
         if (!hasRequiredKeypoints) {
-            const missing = requiredKeypoints.filter(kp => !keypoints[kp]).join(', ');
-            return { feedback: `Align your arms with the camera (missing: ${missing})` };
+            return { feedback: 'Position not detected - align your arms with the camera' };
         }
 
         // Calculate angles for both arms
@@ -145,8 +144,7 @@ export class ExerciseDetector {
         const formFeedback = this.checkPushupForm(avgArmAngle, keypoints);
         this.trackRep(avgArmAngle, config);
 
-        // Add angle to feedback for debugging
-        return { feedback: `${formFeedback} (Angle: ${Math.round(avgArmAngle)}°)` };
+        return { feedback: formFeedback };
     }
 
     detectSquat(pose) {
@@ -304,19 +302,17 @@ export class ExerciseDetector {
         const config = this.exercises.pushup;
         let feedback = 'Good form';
 
-        // More lenient angle checks for pushups
-        if (armAngle < config.endPosition.armAngle - config.endPosition.tolerance * 1.5) {
-            feedback = 'Go higher, arms too bent';
-        } else if (armAngle > config.startPosition.armAngle + config.endPosition.tolerance * 1.5) {
-            feedback = 'Lower down, arms too straight';
+        if (armAngle < config.endPosition.armAngle - config.endPosition.tolerance) {
+            feedback = 'Go lower, bend your arms more';
+        } else if (armAngle > config.startPosition.armAngle + config.startPosition.tolerance) {
+            feedback = 'Dont extend your arms too much';
         }
 
-        // Check body alignment with more tolerance
         if (keypoints.leftHip && keypoints.rightHip && keypoints.leftShoulder && keypoints.rightShoulder) {
             const shoulderY = (keypoints.leftShoulder.y + keypoints.rightShoulder.y) / 2;
             const hipY = (keypoints.leftHip.y + keypoints.rightHip.y) / 2;
-            if (Math.abs(shoulderY - hipY) > 50) { // Increased from 30 to 50
-                feedback = 'Keep your body straight, align hips with shoulders';
+            if (Math.abs(shoulderY - hipY) > 30) {
+                feedback = 'Keep your body straight';
             }
         }
 
@@ -397,20 +393,25 @@ export class ExerciseDetector {
         const endAngle = config.endPosition.armAngle || config.endPosition.kneeAngle || config.endPosition.torsoAngle;
         const tolerance = config.startPosition.tolerance;
 
-        // For pushups, we want to be more lenient with the tracking
-        if (this.currentExercise === 'pushup') {
-            // If we're not in start position, check if we're close to it
+        // For crunches, we want to ensure a complete movement
+        if (this.currentExercise === 'crunch') {
             if (!this.isInStartPosition) {
-                if (angle >= startAngle - tolerance) {
+                // Only move to start position if we're close to the start angle
+                if (Math.abs(angle - startAngle) <= tolerance) {
                     this.isInStartPosition = true;
-                    console.log('Entered start position:', angle);
                 }
             } else {
-                // If we are in start position, check if we've reached the end position
-                if (angle <= endAngle + tolerance) {
-                    this.repCount++;
-                    this.isInStartPosition = false;
-                    console.log('Completed rep:', this.repCount);
+                // When in start position, check if we've reached the crunch position
+                if (Math.abs(angle - endAngle) <= tolerance) {
+                    // Only count the rep if we haven't already counted it
+                    if (!this.lastPosition || Math.abs(this.lastPosition - endAngle) > tolerance) {
+                        this.repCount++;
+                        // Mark this position so we don't count it again
+                        this.lastPosition = angle;
+                    }
+                } else if (Math.abs(angle - startAngle) <= tolerance) {
+                    // Reset lastPosition when returning to start position
+                    this.lastPosition = null;
                 }
             }
             return;
@@ -418,10 +419,12 @@ export class ExerciseDetector {
 
         // Original logic for other exercises
         if (!this.isInStartPosition) {
+            // Check if in start position
             if (Math.abs(angle - startAngle) <= tolerance) {
                 this.isInStartPosition = true;
             }
         } else {
+            // Check if rep is complete
             if (Math.abs(angle - endAngle) <= tolerance) {
                 this.repCount++;
                 this.isInStartPosition = false;
