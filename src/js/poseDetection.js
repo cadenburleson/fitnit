@@ -13,9 +13,12 @@ export class PoseDetector {
 
         // Enhanced pose smoothing
         this.previousPoses = [];
-        this.windowSize = 5; // Number of frames to average
-        this.alpha = 0.3; // Low-pass filter coefficient
-        this.minConfidence = 0.3;
+        this.windowSize = 4; // Number of frames to average // Reduced from 3 to 2 (fewer frames = less smoothing) //5
+        this.alpha = 0.8; // Low-pass filter coefficient // Increased from 0.7 to 0.8 (higher = less smoothing)//0.3
+        this.minConfidence = 0.3; // Range: 0.0 to 1.0 //0.3
+        // 0.3 = 30% confidence minimum
+        // Lower value = more sensitive detection but potentially more false positives
+        // Higher value = more strict detection but might miss some poses
 
         // Frame rate control
         this.lastFrameTime = 0;
