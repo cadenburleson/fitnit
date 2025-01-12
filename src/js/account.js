@@ -19,6 +19,7 @@ async function initializePage() {
     emailInput.value = user.email;
     await loadProfile(user.id);
     await loadWorkoutStats(user.id);
+    await updateWorkoutTotals();
 }
 
 // Profile Management
@@ -300,6 +301,36 @@ function createDistributionChart(exerciseHistory) {
     });
 }
 
+async function updateWorkoutTotals() {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: exercises, error } = await supabase
+        .from('exercise_history')
+        .select('*')
+        .eq('user_id', user.id);
+
+    if (error) {
+        console.error('Error fetching exercise totals:', error);
+        return;
+    }
+
+    const totals = exercises.reduce((acc, exercise) => {
+        acc.pushups += exercise.exercise_type === 'pushup' ? exercise.reps : 0;
+        acc.squats += exercise.exercise_type === 'squat' ? exercise.reps : 0;
+        acc.crunches += exercise.exercise_type === 'crunch' ? exercise.reps : 0;
+        acc.curls += exercise.exercise_type === 'curl' ? exercise.reps : 0;
+        return acc;
+    }, { pushups: 0, squats: 0, crunches: 0, curls: 0 });
+
+    // Update the DOM
+    document.getElementById('pushupTotal').textContent = totals.pushups;
+    document.getElementById('squatTotal').textContent = totals.squats;
+    document.getElementById('crunchTotal').textContent = totals.crunches;
+    document.getElementById('curlTotal').textContent = totals.curls;
+    document.getElementById('workoutTotal').textContent =
+        new Set(exercises.map(ex => ex.workout_id)).size; // Count unique workouts
+}
+
 // Event Listeners
 accountForm.addEventListener('submit', updateProfile);
 profilePicture.addEventListener('change', uploadAvatar);
@@ -309,4 +340,7 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 // Initialize the page
-initializePage(); 
+initializePage();
+
+// Make sure to call this function after page load
+document.addEventListener('DOMContentLoaded', updateWorkoutTotals); 
