@@ -521,6 +521,15 @@ body {
     .controls-right {
         width: 100%;
         justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .user-profile {
+        order: -1;
+        /* Move profile to the top on mobile */
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
     }
 
     .controls select,
@@ -531,6 +540,12 @@ body {
     .navigation {
         height: auto;
         padding: 10px;
+    }
+
+    .user-display-name {
+        font-size: 13px;
+        /* Slightly smaller on mobile */
+        text-align: center;
     }
 }
 
@@ -620,6 +635,9 @@ body {
     position: relative;
     display: flex;
     align-items: center;
+    gap: 10px;
+    flex-direction: row-reverse;
+    /* Reverse the order to put display name on left */
 }
 
 .user-icon {
@@ -659,7 +677,8 @@ body {
 .dropdown-menu {
     position: absolute;
     top: 100%;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -942,5 +961,28 @@ body {
 @media (max-width: 768px) {
     .workout-totals {
         grid-template-columns: 1fr;
+    }
+}
+
+.user-display-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+    order: 2;
+    /* Ensure display name comes after icon in the reversed flex container */
+}
+
+@media (max-width: 768px) {
+    .user-display-name {
+        font-size: 13px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .dropdown-menu {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
     }
 }

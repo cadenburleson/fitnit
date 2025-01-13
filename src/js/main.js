@@ -104,15 +104,22 @@ class App {
         try {
             const { data: profile, error } = await supabase
                 .from('profiles')
-                .select('avatar_url')
+                .select('avatar_url, display_name')
                 .eq('id', userId)
                 .single();
 
             if (error) throw error;
 
+            // Update profile picture
             if (profile?.avatar_url) {
                 const userIcon = document.getElementById('userIcon');
                 userIcon.innerHTML = `<img src="${profile.avatar_url}" alt="Profile Picture">`;
+            }
+
+            // Update display name
+            const userDisplayName = document.getElementById('userDisplayName');
+            if (userDisplayName) {
+                userDisplayName.textContent = profile?.display_name || 'User';
             }
         } catch (error) {
             console.error('Error loading user profile:', error);
