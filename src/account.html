@@ -12,7 +12,20 @@
 <body>
     <nav class="navigation">
         <div class="controls">
-            <a href="/" class="logo">Fitnit</a>
+            <div class="controls-left">
+                <a href="/" class="logo">Fitnit</a>
+            </div>
+            <div class="controls-right">
+                <div class="user-profile">
+                    <div class="user-icon" id="userIcon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="/account.html">My Account</a>
+                        <button class="logout" id="logoutButton">Logout</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -74,7 +87,7 @@
                     <canvas id="repsChart"></canvas>
                 </div>
                 <div class="stats-section__chart">
-                    <h4>Form Score Progress</h4>
+                    <h4>Exercise Progress (Last 7 Days)</h4>
                     <canvas id="formChart"></canvas>
                 </div>
                 <div class="stats-section__chart">

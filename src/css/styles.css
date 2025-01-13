@@ -55,7 +55,6 @@ body {
     font-weight: bold;
     color: var(--primary-color);
     text-decoration: none;
-    margin-right: 20px;
 }
 
 .logo:hover {
@@ -440,9 +439,32 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     width: 100%;
-    max-width: 800px;
+    max-width: 1200px;
+}
+
+.controls-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Hide exercise controls by default */
+#exerciseSelect,
+#startWorkout {
+    display: none;
+}
+
+/* Hide user profile by default */
+.user-profile {
+    display: none;
 }
 
 .controls button,
@@ -493,6 +515,12 @@ body {
     .controls {
         flex-direction: column;
         padding: 10px;
+    }
+
+    .controls-left,
+    .controls-right {
+        width: 100%;
+        justify-content: center;
     }
 
     .controls select,
@@ -818,7 +846,7 @@ body {
 .stats-section {
     background: white;
     border-radius: 10px;
-    padding: 2rem;
+    padding: 1rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     width: 100%;
 }
@@ -839,11 +867,11 @@ body {
 
 .stats-section__chart {
     background: white;
-    padding: 20px;
+    padding: 10px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
-    min-height: 300px;
+    height: 300px;
     width: 100%;
     position: relative;
 }
@@ -857,7 +885,7 @@ body {
 
 .stats-section__chart canvas {
     width: 100% !important;
-    height: 100% !important;
+    height: calc(100% - 40px) !important;
 }
 
 .stats-section__chart .no-data {
@@ -882,11 +910,7 @@ body {
     }
 
     .stats-section__chart {
-        min-height: 250px;
-    }
-
-    .stats-section__chart canvas {
-        height: 200px !important;
+        height: 300px;
     }
 }
 

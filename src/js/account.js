@@ -157,53 +157,74 @@ function createRepsChart(exerciseHistory) {
 }
 
 function createFormScoreChart(exerciseHistory) {
-    const formScores = exerciseHistory.reduce((acc, exercise) => {
-        const date = new Date(exercise.created_at).toLocaleDateString();
-        if (!acc[date]) {
-            acc[date] = {
-                total: exercise.form_score,
-                count: 1
-            };
-        } else {
-            acc[date].total += exercise.form_score;
-            acc[date].count++;
-        }
-        return acc;
-    }, {});
+    // Get the last 7 days
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toLocaleDateString();
+    }).reverse();
 
-    const averageScores = Object.entries(formScores).map(([date, data]) => ({
-        date,
-        score: data.total / data.count
+    // Initialize data structure for each exercise type
+    const exerciseTypes = ['pushup', 'squat', 'crunch', 'curl'];
+    const exerciseData = {};
+    exerciseTypes.forEach(type => {
+        exerciseData[type] = Object.fromEntries(last7Days.map(date => [date, 0]));
+    });
+
+    // Populate data
+    exerciseHistory.forEach(exercise => {
+        const date = new Date(exercise.created_at).toLocaleDateString();
+        if (last7Days.includes(date) && exerciseData[exercise.exercise_type]) {
+            exerciseData[exercise.exercise_type][date] += exercise.reps;
+        }
+    });
+
+    // Create datasets
+    const datasets = exerciseTypes.map((type, index) => ({
+        label: type.charAt(0).toUpperCase() + type.slice(1) + 's',
+        data: last7Days.map(date => exerciseData[type][date]),
+        borderColor: getChartColor(index),
+        fill: false,
+        tension: 0.4
     }));
 
     const ctx = document.getElementById('formChart').getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: averageScores.map(score => score.date),
-            datasets: [{
-                label: 'Average Form Score',
-                data: averageScores.map(score => score.score),
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
+            labels: last7Days,
+            datasets
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false
+                    position: 'bottom',
+                    labels: {
+                        padding: 20
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Exercise Reps Over Time',
+                    padding: {
+                        bottom: 30
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        stepSize: 20
+                    title: {
+                        display: true,
+                        text: 'Number of Reps'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
                     }
                 }
             }
@@ -212,30 +233,22 @@ function createFormScoreChart(exerciseHistory) {
 }
 
 function createFrequencyChart(exerciseHistory) {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toLocaleDateString();
-    }).reverse();
-
-    const workoutDays = exerciseHistory.reduce((acc, exercise) => {
+    const frequencyData = exerciseHistory.reduce((acc, exercise) => {
         const date = new Date(exercise.created_at).toLocaleDateString();
         acc[date] = (acc[date] || 0) + 1;
         return acc;
     }, {});
 
-    const frequencyData = last7Days.map(date => workoutDays[date] || 0);
-
     const ctx = document.getElementById('frequencyChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: last7Days,
+            labels: Object.keys(frequencyData),
             datasets: [{
-                label: 'Workouts per Day',
-                data: frequencyData,
-                backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                borderColor: 'rgba(153, 102, 255, 1)',
+                label: 'Workouts',
+                data: Object.values(frequencyData),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
             }]
         },
@@ -260,28 +273,30 @@ function createFrequencyChart(exerciseHistory) {
 }
 
 function createDistributionChart(exerciseHistory) {
-    const exerciseTypes = exerciseHistory.reduce((acc, exercise) => {
+    const distributionData = exerciseHistory.reduce((acc, exercise) => {
         acc[exercise.exercise_type] = (acc[exercise.exercise_type] || 0) + 1;
         return acc;
     }, {});
-
-    const colors = [
-        'rgba(255, 99, 132, 0.6)',
-        'rgba(54, 162, 235, 0.6)',
-        'rgba(255, 206, 86, 0.6)',
-        'rgba(75, 192, 192, 0.6)',
-        'rgba(153, 102, 255, 0.6)'
-    ];
 
     const ctx = document.getElementById('distributionChart').getContext('2d');
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: Object.keys(exerciseTypes),
+            labels: Object.keys(distributionData),
             datasets: [{
-                data: Object.values(exerciseTypes),
-                backgroundColor: colors.slice(0, Object.keys(exerciseTypes).length),
-                borderColor: colors.slice(0, Object.keys(exerciseTypes).length).map(color => color.replace('0.6', '1')),
+                data: Object.values(distributionData),
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(153, 102, 255, 0.6)',
+                    'rgba(255, 159, 64, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
                 borderWidth: 1
             }]
         },
@@ -290,15 +305,21 @@ function createDistributionChart(exerciseHistory) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right',
-                    labels: {
-                        boxWidth: 12,
-                        padding: 15
-                    }
+                    position: 'bottom'
                 }
             }
         }
     });
+}
+
+function getChartColor(index) {
+    const colors = [
+        'rgb(75, 192, 192)',
+        'rgb(54, 162, 235)',
+        'rgb(153, 102, 255)',
+        'rgb(255, 159, 64)'
+    ];
+    return colors[index % colors.length];
 }
 
 async function updateWorkoutTotals() {

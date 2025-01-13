@@ -124,7 +124,9 @@ class App {
             // User is logged in
             if (this.loginButton) this.loginButton.style.display = 'none';
             if (this.signupButton) this.signupButton.style.display = 'none';
-            if (this.userProfile) this.userProfile.style.display = 'block';
+            if (this.userProfile) this.userProfile.style.display = 'flex';
+            if (this.exerciseSelect) this.exerciseSelect.style.display = 'block';
+            if (this.startButton) this.startButton.style.display = 'block';
 
             // Load and display user's profile picture if they have one
             await this.loadUserProfile(session.user.id);
@@ -133,6 +135,8 @@ class App {
             if (this.loginButton) this.loginButton.style.display = 'block';
             if (this.signupButton) this.signupButton.style.display = 'block';
             if (this.userProfile) this.userProfile.style.display = 'none';
+            if (this.exerciseSelect) this.exerciseSelect.style.display = 'none';
+            if (this.startButton) this.startButton.style.display = 'none';
 
             // Reset to default icon
             if (this.userIcon) {
