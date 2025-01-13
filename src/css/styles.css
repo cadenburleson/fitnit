@@ -14,7 +14,7 @@
 
 body {
     margin: 0;
-    padding: 20px;
+    padding: 10px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
     color: var(--text-color);
@@ -897,8 +897,8 @@ body {
 
 @media (max-width: 768px) {
     .account-container {
-        margin: 1rem;
-        padding: 1.5rem;
+        margin: 0rem;
+        padding: 0rem;
     }
 
     .account-title {
@@ -910,7 +910,7 @@ body {
     }
 
     .stats-section__chart {
-        height: 300px;
+        height: 369px;
     }
 }
 
