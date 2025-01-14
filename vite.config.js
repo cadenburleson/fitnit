@@ -9,6 +9,9 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: '/index.html',
+                app: '/app.html',
+                about: '/about.html',
+                // contact: '/contact.html',
                 login: '/login.html',
                 signup: '/signup.html',
                 account: '/account.html',
