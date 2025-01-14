@@ -12,7 +12,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 async function initializePage() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (!user) {
-        window.location.href = '/login.html';
+        window.location.href = '/app.html';
         return;
     }
 

@@ -82,7 +82,7 @@ class App {
         this.logoutButton?.addEventListener('click', async () => {
             try {
                 await supabase.auth.signOut();
-                window.location.reload();
+                window.location.href = '/index.html';
             } catch (error) {
                 console.error('Error signing out:', error);
             }

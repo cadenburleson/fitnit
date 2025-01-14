@@ -4,71 +4,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitnit - Exercise Tracker</title>
-    <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Fitnit - Personal Gym In Your Pocket</title>
+    <link rel="stylesheet" href="/css/landing.css">
+    <script src="https://unpkg.com/grained@0.0.2/grained.min.js"></script>
+    <script src="/js/grain.js" defer></script>
+    <script type="module" src="/js/navigation.js"></script>
 </head>
 
 <body>
-    <nav class="navigation">
-        <div class="controls">
-            <div class="controls-left">
-                <a href="/" class="logo">Fitnit</a>
-                <select id="exerciseSelect">
-                    <option value="pushup">Push-ups</option>
-                    <option value="squat">Squats</option>
-                    <option value="curl">Dumbbell Curls</option>
-                    <option value="crunch">Crunches</option>
-                </select>
-                <button id="startWorkout">Start Tracking</button>
+    <nav class="nav">
+        <div class="nav__container">
+            <a href="/" class="nav__logo">Fitnit</a>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
-            <div class="controls-right">
-                <button id="login" onclick="window.location.href='login.html'">Login</button>
-                <button id="signup" onclick="window.location.href='signup.html'">Sign Up</button>
-                <div class="user-profile">
-                    <span id="userDisplayName" class="user-display-name"></span>
-                    <div class="user-icon" id="userIcon">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div class="dropdown-menu" id="userDropdown">
-                        <a href="/account.html">My Account</a>
-                        <button class="logout" id="logoutButton">Logout</button>
-                    </div>
-                </div>
+            <div class="nav__menu">
+                <a href="/about">About</a>
+                <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSfA1VR61G_2s6M5UkLypcLd34p9Q_JkMcCZvvCYrF3SpRTyig/viewform">
+                    Leave feedback</a>
+                <!-- <a href="#blog">Blog</a> -->
+                <a href="/signup" class="nav__cta">Get Started</a>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="video-container">
-            <video id="video" playsinline></video>
-            <canvas id="overlay"></canvas>
-        </div>
-
-        <div class="exercise-info">
-            <div class="exercise-info-content">
-                <div id="repCounter">Reps: 0</div>
-                <div id="exerciseType">Exercise: Push-ups</div>
-                <div id="formFeedback">Form: Ready</div>
+    <main>
+        <section class="hero">
+            <div id="video-container">
+                <video class="hero__video" autoplay muted loop playsinline>
+                    <source src="/assets/Fitnit-Hero-vid.mp4" type="video/mp4">
+                </video>
+                <div id="grain-overlay"></div>
             </div>
-        </div>
-    </div>
+            <div class="hero__content">
+                <h1>
+                    PERSONAL GYM<br>
+                    IN YOUR<br>
+                    POCKET.
+                </h1>
+                <a href="/signup" class="cta-button">
+                    START FOR FREE NOW!
+                    <span class="arrow">→</span>
+                </a>
+            </div>
+        </section>
 
-    <!-- Load Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+        <section class="features">
+            <!-- <h3 class="feature-card__title">Features</h3> -->
+            <div class="features__container">
+                <div class="feature-card">
+                    <video autoplay muted loop playsinline class="feature-card__icon">
+                        <source src="/assets/pushups.mp4" type="video/mp4">
+                    </video>
+                    <h3 class="feature-card__title">Tracks Push-ups</h3>
+                    <p class="feature-card__description">Advanced pose detection technology for accurate, instant
+                        exercise tracking and form feedback.</p>
+                </div>
+                <div class="feature-card">
+                    <video autoplay muted loop playsinline class="feature-card__icon">
+                        <source src="/assets/crunches.mp4" type="video/mp4">
+                    </video>
+                    <h3 class="feature-card__title">Tracks Crunches</h3>
+                    <p class="feature-card__description">Advanced pose detection technology for accurate, instant
+                        exercise tracking and form feedback.</p>
+                </div>
+                <div class="feature-card">
+                    <video autoplay muted loop playsinline class="feature-card__icon">
+                        <source src="/assets/squats.mp4" type="video/mp4">
+                    </video>
+                    <h3 class="feature-card__title">Tracks Squats</h3>
+                    <p class="feature-card__description">Advanced pose detection technology for accurate, instant
+                        exercise tracking and form feedback.</p>
+                </div>
+                <div class="feature-card">
+                    <video autoplay muted loop playsinline class="feature-card__icon">
+                        <source src="/assets/curls.mp4" type="video/mp4">
+                    </video>
+                    <h3 class="feature-card__title">Tracks Curls</h3>
+                    <p class="feature-card__description">Advanced pose detection technology for accurate, instant
+                        exercise tracking and form feedback.</p>
+                </div>
+                <div class="feature-card">
+                    <video autoplay muted loop playsinline class="feature-card__icon">
+                        <source src="/assets/stats.mp4" type="video/mp4">
+                    </video>
+                    <h3 class="feature-card__title">Tracks stats</h3>
+                    <p class="feature-card__description">Advanced pose detection technology for accurate, instant
+                        exercise tracking and form feedback.</p>
+                </div>
 
-    <!-- Updated script path to match Vite's configuration -->
-    <script type="module" src="/js/main.js"></script>
 
-    <script>
-        const startButton = document.getElementById('startWorkout');
+                <!-- <div class="feature-card">
+                    <img src="/assets/progress-icon.png" alt="Progress Tracking" class="feature-card__icon">
+                    <h3 class="feature-card__title">Progress Tracking</h3>
+                    <p class="feature-card__description">Monitor your fitness journey with detailed statistics and
+                        progress visualization.</p>
+                </div> -->
 
-        // Update start button appearance
-        startButton.addEventListener('click', () => {
-            startButton.classList.toggle('tracking');
-            startButton.textContent = startButton.classList.contains('tracking') ? 'Stop Tracking' : 'Start Tracking';
-        });
-    </script>
+
+            </div>
+        </section>
+    </main>
 </body>
 
 </html>

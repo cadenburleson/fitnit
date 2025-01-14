@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Successful login
             console.log('Logged in successfully:', data)
-            // Redirect to dashboard or home page
-            window.location.href = '/index.html'
+            // Redirect to app page
+            window.location.href = '/app.html'
         } catch (error) {
             console.error('Error logging in:', error.message)
             alert('Error logging in: ' + error.message)

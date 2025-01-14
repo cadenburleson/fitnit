@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitnit - Exercise Tracker</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <nav class="navigation">
+        <div class="controls">
+            <div class="controls-left">
+                <a href="/" class="logo">Fitnit</a>
+                <select id="exerciseSelect">
+                    <option value="pushup">Push-ups</option>
+                    <option value="squat">Squats</option>
+                    <option value="curl">Dumbbell Curls</option>
+                    <option value="crunch">Crunches</option>
+                </select>
+                <button id="startWorkout">Start Tracking</button>
+            </div>
+            <div class="controls-right">
+                <button id="login" onclick="window.location.href='login.html'">Login</button>
+                <button id="signup" onclick="window.location.href='signup.html'">Sign Up</button>
+                <div class="user-profile">
+                    <span id="userDisplayName" class="user-display-name"></span>
+                    <div class="user-icon" id="userIcon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="/account.html">My Account</a>
+                        <button class="logout" id="logoutButton">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="video-container">
+            <video id="video" playsinline></video>
+            <canvas id="overlay"></canvas>
+        </div>
+
+        <div class="exercise-info">
+            <div class="exercise-info-content">
+                <div id="repCounter">Reps: 0</div>
+                <div id="exerciseType">Exercise: Push-ups</div>
+                <div id="formFeedback">Form: Ready</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <!-- Updated script path to match Vite's configuration -->
+    <script type="module" src="/js/main.js"></script>
+
+    <script>
+        const startButton = document.getElementById('startWorkout');
+
+        // Update start button appearance
+        startButton.addEventListener('click', () => {
+            startButton.classList.toggle('tracking');
+            startButton.textContent = startButton.classList.contains('tracking') ? 'Stop Tracking' : 'Start Tracking';
+        });
+    </script>
+</body>
+
+</html>
