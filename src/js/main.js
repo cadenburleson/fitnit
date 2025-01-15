@@ -5,28 +5,32 @@ import { supabase } from './supabaseClient.js';
 // Handle auth callback
 async function handleAuthCallback() {
     const hash = window.location.hash;
+    console.log('Checking auth callback, hash:', hash);
+
     if (hash && hash.includes('access_token')) {
         // Parse the hash
         const params = new URLSearchParams(hash.substring(1));
+        console.log('Auth params:', Object.fromEntries(params));
 
         try {
             // Get the current session
             const { data: { session }, error } = await supabase.auth.getSession();
+            console.log('Auth session:', session, 'Error:', error);
+
             if (error) throw error;
 
             if (session) {
                 if (params.get('type') === 'magiclink') {
-                    // If it's a magic link, go directly to app
+                    console.log('Magic link detected, redirecting to app');
                     window.location.href = '/app.html';
                 } else {
-                    // For email confirmations, go to login
+                    console.log('Email confirmation detected, redirecting to login');
                     window.location.href = '/login.html?confirmed=true';
                 }
                 return true;
             }
         } catch (error) {
             console.error('Error handling auth callback:', error.message);
-            // If there's an error, redirect to login
             window.location.href = '/login.html?error=auth';
         }
     }
@@ -289,8 +293,12 @@ class App {
 
 // Initialize the app only if we're not handling an auth callback
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM loaded, checking for auth callback');
     const isAuthCallback = await handleAuthCallback();
+    console.log('Auth callback result:', isAuthCallback);
     if (!isAuthCallback && !app) {
+        console.log('Initializing app');
         app = new App();
+        await app.initialize();
     }
 }); 
