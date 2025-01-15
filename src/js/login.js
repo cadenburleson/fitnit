@@ -3,7 +3,9 @@ import { supabase } from './supabaseClient.js'
 document.addEventListener('DOMContentLoaded', () => {
     // Check for confirmation status
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('status') === 'confirm') {
+    if (urlParams.get('confirmed') === 'true') {
+        alert('Email confirmed successfully! You can now log in.');
+    } else if (urlParams.get('status') === 'confirm') {
         alert('Please check your email and click the confirmation link before logging in.');
     }
 

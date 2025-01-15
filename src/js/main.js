@@ -2,6 +2,31 @@ import { PoseDetector } from './poseDetection.js';
 import { ExerciseDetector } from './exerciseDetection.js';
 import { supabase } from './supabaseClient.js';
 
+// Handle auth callback
+async function handleAuthCallback() {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token')) {
+        // Parse the hash
+        const params = new URLSearchParams(hash.substring(1));
+        if (params.get('type') === 'magiclink') {
+            try {
+                // Get the current session
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+
+                if (session) {
+                    // Redirect to login page with confirmation status
+                    window.location.href = '/login.html?confirmed=true';
+                    return true;
+                }
+            } catch (error) {
+                console.error('Error handling auth callback:', error.message);
+            }
+        }
+    }
+    return false;
+}
+
 let app = null;
 
 class App {
@@ -256,15 +281,10 @@ class App {
     }
 }
 
-// Initialize the application when the DOM is fully loaded
+// Initialize the app only if we're not handling an auth callback
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
+    const isAuthCallback = await handleAuthCallback();
+    if (!isAuthCallback && !app) {
         app = new App();
-        const success = await app.initialize();
-        if (!success) {
-            console.error('Failed to initialize application');
-        }
-    } catch (error) {
-        console.error('Error during application startup:', error);
     }
 }); 
