@@ -4,29 +4,30 @@ import { supabase } from './supabaseClient.js';
 
 // Handle auth callback
 async function handleAuthCallback() {
-    // Only handle auth callback if we're not already on the login page
-    if (window.location.pathname === '/login.html') {
-        return false;
-    }
-
     const hash = window.location.hash;
     if (hash && hash.includes('access_token')) {
         // Parse the hash
         const params = new URLSearchParams(hash.substring(1));
-        if (params.get('type') === 'magiclink') {
-            try {
-                // Get the current session
-                const { data: { session }, error } = await supabase.auth.getSession();
-                if (error) throw error;
 
-                if (session) {
-                    // Redirect to login page with confirmation status
+        try {
+            // Get the current session
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) throw error;
+
+            if (session) {
+                if (params.get('type') === 'magiclink') {
+                    // If it's a magic link, go directly to app
+                    window.location.href = '/app.html';
+                } else {
+                    // For email confirmations, go to login
                     window.location.href = '/login.html?confirmed=true';
-                    return true;
                 }
-            } catch (error) {
-                console.error('Error handling auth callback:', error.message);
+                return true;
             }
+        } catch (error) {
+            console.error('Error handling auth callback:', error.message);
+            // If there's an error, redirect to login
+            window.location.href = '/login.html?error=auth';
         }
     }
     return false;
