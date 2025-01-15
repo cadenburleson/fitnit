@@ -4,6 +4,11 @@ import { supabase } from './supabaseClient.js';
 
 // Handle auth callback
 async function handleAuthCallback() {
+    // Only handle auth callback if we're not already on the login page
+    if (window.location.pathname === '/login.html') {
+        return false;
+    }
+
     const hash = window.location.hash;
     if (hash && hash.includes('access_token')) {
         // Parse the hash

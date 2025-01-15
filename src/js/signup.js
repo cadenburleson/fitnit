@@ -34,11 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 email,
                 password,
                 options: {
-                    data: {
-                        email_confirmed: false
-                    },
-                    // Ensure the redirect goes to the root which will then handle the redirect to login
-                    emailRedirectTo: `${siteUrl}`
+                    emailRedirectTo: `${siteUrl}/login.html?confirmed=true`
                 }
             })
 
