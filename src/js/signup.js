@@ -1,5 +1,8 @@
 import { supabase } from './supabaseClient.js'
 
+// Get the site URL from environment variable or fallback to window.location.origin
+const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('signupForm');
 
@@ -31,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 email,
                 password,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/login.html`
+                    emailRedirectTo: `${siteUrl}/login.html`
                 }
             })
 

@@ -1,10 +1,13 @@
 import { supabase } from './supabaseClient.js'
 
+// Get the site URL from environment variable or fallback to window.location.origin
+const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+
 document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
     e.preventDefault()
 
     const email = document.getElementById('email').value
-    const redirectTo = `${window.location.origin}/update-password.html`
+    const redirectTo = `${siteUrl}/update-password.html`
 
     try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {

@@ -7,11 +7,31 @@
     <title>Fitnit - Personal Gym In Your Pocket</title>
     <link rel="stylesheet" href="/css/landing.css">
     <script src="https://unpkg.com/grained@0.0.2/grained.min.js"></script>
-    <script src="/js/grain.js" defer></script>
+    <script type="module" src="/js/grain.js" defer></script>
     <script type="module" src="/js/navigation.js"></script>
+    <!-- Meta Pixel Code -->
+    <script>
+        !function (f, b, e, v, n, t, s) {
+            if (f.fbq) return; n = f.fbq = function () {
+                n.callMethod ?
+                    n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+            };
+            if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+            n.queue = []; t = b.createElement(e); t.async = !0;
+            t.src = v; s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s)
+        }(window, document, 'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1792188688259124');
+        fbq('track', 'PageView');
+    </script>
+    <!-- End Meta Pixel Code -->
 </head>
 
 <body>
+    <!-- Meta Pixel Noscript -->
+    <noscript><img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id=1792188688259124&ev=PageView&noscript=1" /></noscript>
     <nav class="nav">
         <div class="nav__container">
             <a href="/" class="nav__logo">Fitnit</a>
@@ -95,6 +115,11 @@
                     <p class="feature-card__description">Advanced pose detection technology for accurate, instant
                         exercise tracking and form feedback.</p>
                 </div>
+
+                <video autoplay muted loop playsinline>
+                    <source src="https://www.youtube.com/watch?v=WUrfbm_KmNk" type="video/mp4">
+                </video>
+
 
 
                 <!-- <div class="feature-card">
