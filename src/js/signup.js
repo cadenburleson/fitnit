@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 email,
                 password,
                 options: {
-                    emailRedirectTo: `${siteUrl}/login.html?confirmed=true`
+                    emailRedirectTo: `${siteUrl}`
                 }
             })
 
