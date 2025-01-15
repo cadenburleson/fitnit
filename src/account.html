@@ -7,6 +7,8 @@
     <title>Account Settings - Fitnit</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <!-- Meta Pixel Code -->
     <script>
         !function (f, b, e, v, n, t, s) {
@@ -33,16 +35,18 @@
     <nav class="navigation">
         <div class="controls">
             <div class="controls-left">
-                <a href="/" class="logo">Fitnit</a>
+                <a href="/" class="nav__logo">Fitnit</a>
             </div>
             <div class="controls-right">
                 <div class="user-profile">
-                    <div class="user-icon" id="userIcon">
-                        <i class="fas fa-user-circle"></i>
+                    <span id="userDisplayName">User</span>
+                    <div id="userIcon" class="user-icon">
+                        <img id="navProfilePic" class="profile-pic" src="" alt="Profile Picture" style="display: none;">
+                        <span id="defaultProfileIcon" class="material-symbols-outlined">account_circle</span>
                     </div>
-                    <div class="dropdown-menu" id="userDropdown">
+                    <div id="userDropdown" class="dropdown-menu">
                         <a href="/account.html">My Account</a>
-                        <button class="logout" id="logoutButton">Logout</button>
+                        <button id="logoutButton" class="logout">Logout</button>
                     </div>
                 </div>
             </div>
@@ -73,11 +77,9 @@
             </div>
             <button type="submit" class="account-form__save-btn">Save Changes</button>
         </form>
-        <button id="logoutBtn" class="account-form__logout-btn">Logout</button>
 
         <div class="stats-section">
             <h3 class="stats-section__title">Workout Statistics</h3>
-
             <div class="workout-totals">
                 <div class="workout-total-item">
                     <h4>Total Pushups</h4>
@@ -122,9 +124,9 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="js/account.js"></script>
+    <script type="module" src="/js/account.js"></script>
+    <script type="module" src="/js/navigation.js"></script>
 </body>
 
 </html>

@@ -6,7 +6,10 @@ const profilePicture = document.getElementById('profilePicture');
 const profilePreview = document.getElementById('profilePreview');
 const displayNameInput = document.getElementById('displayName');
 const emailInput = document.getElementById('email');
-const logoutBtn = document.getElementById('logoutBtn');
+const userIcon = document.getElementById('userIcon');
+const userDropdown = document.getElementById('userDropdown');
+const logoutButton = document.getElementById('logoutButton');
+const userProfile = document.querySelector('.user-profile');
 
 // Initialize page
 async function initializePage() {
@@ -20,6 +23,34 @@ async function initializePage() {
     await loadProfile(user.id);
     await loadWorkoutStats(user.id);
     await updateWorkoutTotals();
+
+    // Set up navigation event listeners
+    setupNavigation();
+}
+
+function setupNavigation() {
+    // User profile dropdown toggle
+    userIcon?.addEventListener('click', () => {
+        userDropdown?.classList.toggle('active');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (userDropdown?.classList.contains('active') &&
+            !userProfile?.contains(e.target)) {
+            userDropdown.classList.remove('active');
+        }
+    });
+
+    // Logout button
+    logoutButton?.addEventListener('click', async () => {
+        try {
+            await supabase.auth.signOut();
+            window.location.href = '/index.html';
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    });
 }
 
 // Profile Management
@@ -37,8 +68,35 @@ async function loadProfile(userId) {
 
     if (profile) {
         displayNameInput.value = profile.display_name || '';
+
+        // Update profile pictures if there's an avatar URL
         if (profile.avatar_url) {
-            profilePreview.innerHTML = `<img src="${profile.avatar_url}" alt="Profile Picture">`;
+            // Update main profile preview
+            profilePreview.innerHTML = `<img src="${profile.avatar_url}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+
+            // Update navigation profile picture
+            const navProfilePic = document.getElementById('navProfilePic');
+            const defaultProfileIcon = document.getElementById('defaultProfileIcon');
+            if (navProfilePic && defaultProfileIcon) {
+                navProfilePic.src = profile.avatar_url;
+                navProfilePic.style.display = 'block';
+                defaultProfileIcon.style.display = 'none';
+            }
+        } else {
+            // Show default icons if no avatar URL
+            profilePreview.innerHTML = '<i class="fas fa-user-circle"></i>';
+            const navProfilePic = document.getElementById('navProfilePic');
+            const defaultProfileIcon = document.getElementById('defaultProfileIcon');
+            if (navProfilePic && defaultProfileIcon) {
+                navProfilePic.style.display = 'none';
+                defaultProfileIcon.style.display = 'block';
+            }
+        }
+
+        // Make sure the user profile section is visible
+        const userProfile = document.querySelector('.user-profile');
+        if (userProfile) {
+            userProfile.style.display = 'flex';
         }
     }
 }
@@ -87,7 +145,17 @@ async function uploadAvatar(event) {
         .eq('id', user.id);
 
     if (!updateError) {
-        profilePreview.innerHTML = `<img src="${publicUrl}" alt="Profile Picture">`;
+        // Update main profile preview
+        profilePreview.innerHTML = `<img src="${publicUrl}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+
+        // Update navigation profile picture
+        const navProfilePic = document.getElementById('navProfilePic');
+        const defaultProfileIcon = document.getElementById('defaultProfileIcon');
+        if (navProfilePic && defaultProfileIcon) {
+            navProfilePic.src = publicUrl;
+            navProfilePic.style.display = 'block';
+            defaultProfileIcon.style.display = 'none';
+        }
     }
 }
 
@@ -131,25 +199,17 @@ function createRepsChart(exerciseHistory) {
             datasets: [{
                 label: 'Total Reps',
                 data: Object.values(repsData),
-                backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(74, 222, 128, 0.6)',
+                borderColor: 'rgba(74, 222, 128, 1)',
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 5
-                    }
+                    beginAtZero: true
                 }
             }
         }
@@ -157,21 +217,18 @@ function createRepsChart(exerciseHistory) {
 }
 
 function createFormScoreChart(exerciseHistory) {
-    // Get the last 7 days
     const last7Days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - i);
         return d.toLocaleDateString();
     }).reverse();
 
-    // Initialize data structure for each exercise type
     const exerciseTypes = ['pushup', 'squat', 'crunch', 'curl'];
     const exerciseData = {};
     exerciseTypes.forEach(type => {
         exerciseData[type] = Object.fromEntries(last7Days.map(date => [date, 0]));
     });
 
-    // Populate data
     exerciseHistory.forEach(exercise => {
         const date = new Date(exercise.created_at).toLocaleDateString();
         if (last7Days.includes(date) && exerciseData[exercise.exercise_type]) {
@@ -179,13 +236,11 @@ function createFormScoreChart(exerciseHistory) {
         }
     });
 
-    // Create datasets
     const datasets = exerciseTypes.map((type, index) => ({
         label: type.charAt(0).toUpperCase() + type.slice(1) + 's',
         data: last7Days.map(date => exerciseData[type][date]),
         borderColor: getChartColor(index),
-        fill: false,
-        tension: 0.4
+        fill: false
     }));
 
     const ctx = document.getElementById('formChart').getContext('2d');
@@ -198,34 +253,9 @@ function createFormScoreChart(exerciseHistory) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Exercise Reps Over Time',
-                    padding: {
-                        bottom: 30
-                    }
-                }
-            },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Number of Reps'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Date'
-                    }
+                    beginAtZero: true
                 }
             }
         }
@@ -247,19 +277,14 @@ function createFrequencyChart(exerciseHistory) {
             datasets: [{
                 label: 'Workouts',
                 data: Object.values(frequencyData),
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(74, 222, 128, 0.6)',
+                borderColor: 'rgba(74, 222, 128, 1)',
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -286,28 +311,23 @@ function createDistributionChart(exerciseHistory) {
             datasets: [{
                 data: Object.values(distributionData),
                 backgroundColor: [
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(54, 162, 235, 0.6)',
-                    'rgba(153, 102, 255, 0.6)',
-                    'rgba(255, 159, 64, 0.6)'
+                    'rgba(74, 222, 128, 0.6)',
+                    'rgba(74, 222, 128, 0.8)',
+                    'rgba(74, 222, 128, 0.4)',
+                    'rgba(74, 222, 128, 0.2)'
                 ],
                 borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(255, 159, 64, 1)'
+                    'rgba(74, 222, 128, 1)',
+                    'rgba(74, 222, 128, 1)',
+                    'rgba(74, 222, 128, 1)',
+                    'rgba(74, 222, 128, 1)'
                 ],
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
+            maintainAspectRatio: false
         }
     });
 }
@@ -355,9 +375,13 @@ async function updateWorkoutTotals() {
 // Event Listeners
 accountForm.addEventListener('submit', updateProfile);
 profilePicture.addEventListener('change', uploadAvatar);
-logoutBtn.addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/login.html';
+logoutButton.addEventListener('click', async () => {
+    try {
+        await supabase.auth.signOut();
+        window.location.href = '/index.html';
+    } catch (error) {
+        console.error('Error signing out:', error);
+    }
 });
 
 // Initialize the page

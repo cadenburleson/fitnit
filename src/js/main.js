@@ -57,16 +57,9 @@ class App {
             this.exerciseType = document.getElementById('exerciseType');
             this.startButton = document.getElementById('startWorkout');
             this.exerciseSelect = document.getElementById('exerciseSelect');
-            this.loginButton = document.getElementById('login');
-            this.signupButton = document.getElementById('signup');
-            this.userProfile = document.querySelector('.user-profile');
-            this.userIcon = document.getElementById('userIcon');
-            this.userDropdown = document.getElementById('userDropdown');
-            this.logoutButton = document.getElementById('logoutButton');
 
-            // Setup event listeners
+            // Setup exercise event listeners
             this.setupEventListeners();
-            this.setupAuthListeners();
 
             // Initialize the exercise detector with the default exercise
             this.exerciseDetector.setExercise(this.currentExercise);
@@ -74,13 +67,9 @@ class App {
             // Set up pose detection callback
             this.poseDetector.onPoseDetected = (pose) => {
                 if (this.isTracking && pose) {
-                    // console.log('Pose received in App:', pose);
                     this.onPoseDetected(pose);
                 }
             };
-
-            // Check initial auth state
-            await this.checkAuthState();
 
             // Initialize and start pose detection
             await this.poseDetector.start();
@@ -99,92 +88,6 @@ class App {
             this.exerciseDetector.setExercise(this.currentExercise);
             this.exerciseType.textContent = `Exercise: ${e.target.options[e.target.selectedIndex].text}`;
         });
-
-        // User profile dropdown
-        this.userIcon?.addEventListener('click', () => {
-            this.userDropdown?.classList.toggle('active');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (this.userDropdown?.classList.contains('active') &&
-                !this.userProfile?.contains(e.target)) {
-                this.userDropdown.classList.remove('active');
-            }
-        });
-
-        // Logout button
-        this.logoutButton?.addEventListener('click', async () => {
-            try {
-                await supabase.auth.signOut();
-                window.location.href = '/index.html';
-            } catch (error) {
-                console.error('Error signing out:', error);
-            }
-        });
-    }
-
-    setupAuthListeners() {
-        supabase.auth.onAuthStateChange((event, session) => {
-            this.updateAuthUI(session);
-        });
-    }
-
-    async checkAuthState() {
-        const { data: { session } } = await supabase.auth.getSession();
-        this.updateAuthUI(session);
-    }
-
-    async loadUserProfile(userId) {
-        try {
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('avatar_url, display_name')
-                .eq('id', userId)
-                .single();
-
-            if (error) throw error;
-
-            // Update profile picture
-            if (profile?.avatar_url) {
-                const userIcon = document.getElementById('userIcon');
-                userIcon.innerHTML = `<img src="${profile.avatar_url}" alt="Profile Picture">`;
-            }
-
-            // Update display name
-            const userDisplayName = document.getElementById('userDisplayName');
-            if (userDisplayName) {
-                userDisplayName.textContent = profile?.display_name || 'User';
-            }
-        } catch (error) {
-            console.error('Error loading user profile:', error);
-        }
-    }
-
-    async updateAuthUI(session) {
-        if (session) {
-            // User is logged in
-            if (this.loginButton) this.loginButton.style.display = 'none';
-            if (this.signupButton) this.signupButton.style.display = 'none';
-            if (this.userProfile) this.userProfile.style.display = 'flex';
-            if (this.exerciseSelect) this.exerciseSelect.style.display = 'block';
-            if (this.startButton) this.startButton.style.display = 'block';
-
-            // Load and display user's profile picture if they have one
-            await this.loadUserProfile(session.user.id);
-        } else {
-            // User is logged out
-            if (this.loginButton) this.loginButton.style.display = 'block';
-            if (this.signupButton) this.signupButton.style.display = 'block';
-            if (this.userProfile) this.userProfile.style.display = 'none';
-            if (this.exerciseSelect) this.exerciseSelect.style.display = 'none';
-            if (this.startButton) this.startButton.style.display = 'none';
-
-            // Reset to default icon
-            if (this.userIcon) {
-                this.userIcon.innerHTML = '<i class="fas fa-user-circle"></i>';
-            }
-        }
     }
 
     capitalizeFirstLetter(string) {
@@ -217,9 +120,6 @@ class App {
     }
 
     onPoseDetected(pose) {
-        // Log the incoming pose data
-        // console.log('Pose received in App:', pose);
-
         if (!this.isTracking || !pose || !pose.keypoints) {
             return;
         }
