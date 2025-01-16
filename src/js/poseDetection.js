@@ -163,7 +163,6 @@ export class PoseDetector {
     }
 
     convertToCompatibleFormat(landmarks) {
-        // Map MediaPipe landmarks to our app's keypoint format for exercise detection
         const keypointMap = {
             0: 'nose',
             11: 'leftShoulder',
@@ -180,6 +179,21 @@ export class PoseDetector {
             28: 'rightAnkle'
         };
 
+        // Calculate scale factors based on video and canvas dimensions
+        const videoAspect = this.video.videoWidth / this.video.videoHeight;
+        const canvasAspect = this.canvas.width / this.canvas.height;
+
+        let scaleX = this.canvas.width;
+        let scaleY = this.canvas.height;
+
+        if (canvasAspect > videoAspect) {
+            // Video is taller relative to canvas
+            scaleX = this.canvas.height * videoAspect;
+        } else {
+            // Video is wider relative to canvas
+            scaleY = this.canvas.width / videoAspect;
+        }
+
         const keypoints = [];
         for (const [index, part] of Object.entries(keypointMap)) {
             const landmark = landmarks[parseInt(index)];
@@ -188,8 +202,8 @@ export class PoseDetector {
                 index: parseInt(index),
                 score: landmark.visibility || 0,
                 position: {
-                    x: landmark.x * this.canvas.width,
-                    y: landmark.y * this.canvas.height
+                    x: landmark.x * scaleX,
+                    y: landmark.y * scaleY
                 }
             });
         }
