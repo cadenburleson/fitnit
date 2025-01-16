@@ -108,14 +108,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // User profile dropdown
+    console.log('Setting up dropdown, userIcon:', userIcon);
     userIcon?.addEventListener('click', () => {
+        console.log('User icon clicked');
         userDropdown?.classList.toggle('active');
+        console.log('Dropdown toggled, active:', userDropdown?.classList.contains('active'));
     });
 
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
+        console.log('Document clicked, target:', e.target);
         if (userDropdown?.classList.contains('active') &&
             !userProfile?.contains(e.target)) {
+            console.log('Closing dropdown');
             userDropdown.classList.remove('active');
         }
     });

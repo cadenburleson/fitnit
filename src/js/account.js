@@ -6,10 +6,6 @@ const profilePicture = document.getElementById('profilePicture');
 const profilePreview = document.getElementById('profilePreview');
 const displayNameInput = document.getElementById('displayName');
 const emailInput = document.getElementById('email');
-const userIcon = document.getElementById('userIcon');
-const userDropdown = document.getElementById('userDropdown');
-const logoutButton = document.getElementById('logoutButton');
-const userProfile = document.querySelector('.user-profile');
 
 // Initialize page
 async function initializePage() {
@@ -23,34 +19,6 @@ async function initializePage() {
     await loadProfile(user.id);
     await loadWorkoutStats(user.id);
     await updateWorkoutTotals();
-
-    // Set up navigation event listeners
-    setupNavigation();
-}
-
-function setupNavigation() {
-    // User profile dropdown toggle
-    userIcon?.addEventListener('click', () => {
-        userDropdown?.classList.toggle('active');
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (userDropdown?.classList.contains('active') &&
-            !userProfile?.contains(e.target)) {
-            userDropdown.classList.remove('active');
-        }
-    });
-
-    // Logout button
-    logoutButton?.addEventListener('click', async () => {
-        try {
-            await supabase.auth.signOut();
-            window.location.href = '/index.html';
-        } catch (error) {
-            console.error('Error signing out:', error);
-        }
-    });
 }
 
 // Profile Management
@@ -375,14 +343,6 @@ async function updateWorkoutTotals() {
 // Event Listeners
 accountForm.addEventListener('submit', updateProfile);
 profilePicture.addEventListener('change', uploadAvatar);
-logoutButton.addEventListener('click', async () => {
-    try {
-        await supabase.auth.signOut();
-        window.location.href = '/index.html';
-    } catch (error) {
-        console.error('Error signing out:', error);
-    }
-});
 
 // Initialize the page
 initializePage();
