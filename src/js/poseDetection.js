@@ -11,6 +11,15 @@ export class PoseDetector {
         this.isRunning = false;
         this.onPoseDetected = null;
 
+        // Add resize handler
+        this.resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                if (entry.target === this.video.parentElement) {
+                    this.updateCanvasSize();
+                }
+            }
+        });
+
         // Enhanced pose smoothing
         this.previousPoses = [];
         this.windowSize = 4; // Number of frames to average // Reduced from 3 to 2 (fewer frames = less smoothing) //5
@@ -25,6 +34,29 @@ export class PoseDetector {
         this.targetFPS = 30; // Target frames per second
         this.frameInterval = 1000 / this.targetFPS;
         this.rafId = null; // Store requestAnimationFrame ID
+    }
+
+    updateCanvasSize() {
+        const container = this.video.parentElement;
+        const rect = container.getBoundingClientRect();
+
+        // Get the actual displayed video dimensions
+        const videoAspect = this.video.videoWidth / this.video.videoHeight;
+        const containerAspect = rect.width / rect.height;
+
+        let width, height;
+        if (containerAspect > videoAspect) {
+            // Container is wider than video
+            height = rect.height;
+            width = height * videoAspect;
+        } else {
+            // Container is taller than video
+            width = rect.width;
+            height = width / videoAspect;
+        }
+
+        this.canvas.width = width;
+        this.canvas.height = height;
     }
 
     async initialize() {
@@ -101,10 +133,11 @@ export class PoseDetector {
             return new Promise((resolve, reject) => {
                 this.video.onloadedmetadata = () => {
                     try {
-                        // Match canvas size to container size
-                        const container = this.video.parentElement;
-                        this.canvas.width = container.clientWidth;
-                        this.canvas.height = container.clientHeight;
+                        // Start observing the container for size changes
+                        this.resizeObserver.observe(this.video.parentElement);
+
+                        // Initial canvas size update
+                        this.updateCanvasSize();
 
                         // Mirror video
                         this.video.style.transform = 'scaleX(-1)';
@@ -346,6 +379,9 @@ export class PoseDetector {
     async stop() {
         console.log('Stopping pose detection...');
         this.isRunning = false;
+
+        // Stop observing resize changes
+        this.resizeObserver.disconnect();
 
         // Cancel any pending animation frame
         if (this.rafId) {
