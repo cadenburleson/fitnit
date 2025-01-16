@@ -101,11 +101,10 @@ export class PoseDetector {
             return new Promise((resolve, reject) => {
                 this.video.onloadedmetadata = () => {
                     try {
-                        // Set fixed dimensions
-                        this.video.width = CAMERA_CONFIG.width;
-                        this.video.height = CAMERA_CONFIG.height;
-                        this.canvas.width = CAMERA_CONFIG.width;
-                        this.canvas.height = CAMERA_CONFIG.height;
+                        // Match canvas size to container size
+                        const container = this.video.parentElement;
+                        this.canvas.width = container.clientWidth;
+                        this.canvas.height = container.clientHeight;
 
                         // Mirror video
                         this.video.style.transform = 'scaleX(-1)';
@@ -163,6 +162,7 @@ export class PoseDetector {
     }
 
     convertToCompatibleFormat(landmarks) {
+        // Map MediaPipe landmarks to our app's keypoint format for exercise detection
         const keypointMap = {
             0: 'nose',
             11: 'leftShoulder',
@@ -179,21 +179,6 @@ export class PoseDetector {
             28: 'rightAnkle'
         };
 
-        // Calculate scale factors based on video and canvas dimensions
-        const videoAspect = this.video.videoWidth / this.video.videoHeight;
-        const canvasAspect = this.canvas.width / this.canvas.height;
-
-        let scaleX = this.canvas.width;
-        let scaleY = this.canvas.height;
-
-        if (canvasAspect > videoAspect) {
-            // Video is taller relative to canvas
-            scaleX = this.canvas.height * videoAspect;
-        } else {
-            // Video is wider relative to canvas
-            scaleY = this.canvas.width / videoAspect;
-        }
-
         const keypoints = [];
         for (const [index, part] of Object.entries(keypointMap)) {
             const landmark = landmarks[parseInt(index)];
@@ -202,8 +187,8 @@ export class PoseDetector {
                 index: parseInt(index),
                 score: landmark.visibility || 0,
                 position: {
-                    x: landmark.x * scaleX,
-                    y: landmark.y * scaleY
+                    x: landmark.x * this.canvas.width,
+                    y: landmark.y * this.canvas.height
                 }
             });
         }
