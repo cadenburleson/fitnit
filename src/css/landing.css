@@ -366,3 +366,16 @@ body {
     border-radius: 30px;
     overflow: hidden;
 }
+
+/* Hide play button on videos */
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-panel {
+    display: none !important;
+    -webkit-appearance: none;
+}
+
+video {
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+}
