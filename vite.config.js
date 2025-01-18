@@ -6,6 +6,7 @@ export default defineConfig({
     build: {
         outDir: '../dist',
         emptyOutDir: true,
+        assetsDir: 'assets',
         rollupOptions: {
             input: {
                 main: '/index.html',
@@ -17,6 +18,16 @@ export default defineConfig({
                 account: '/account.html',
                 resetPassword: '/reset-password.html',
                 updatePassword: '/update-password.html'
+            },
+            output: {
+                assetFileNames: (assetInfo) => {
+                    const info = assetInfo.name.split('.');
+                    const ext = info[info.length - 1];
+                    if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+                        return `assets/[name][extname]`;
+                    }
+                    return `assets/[name]-[hash][extname]`;
+                }
             }
         }
     },
