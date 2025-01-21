@@ -414,6 +414,117 @@ async function updateWorkoutTotals() {
         new Set(exercises.map(ex => ex.workout_id)).size; // Count unique workouts
 }
 
+// Achievements Management
+async function initializeAchievements() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Set up the circular progress indicators
+    const circles = document.querySelectorAll('.progress-ring__circle-progress');
+    circles.forEach(circle => {
+        const radius = circle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
+    });
+
+    await loadAchievements(user.id);
+}
+
+async function loadAchievements(userId) {
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 7);
+
+    // Get exercise history for the last 7 days
+    const { data: exerciseHistory, error } = await supabase
+        .from('exercise_history')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('created_at', weekAgo.toISOString())
+        .lte('created_at', today.toISOString());
+
+    if (error) {
+        console.error('Error loading exercise history for achievements:', error);
+        return;
+    }
+
+    // Process each exercise type (regular, elite, and legendary)
+    const exerciseTypes = [
+        'pushup', 'squat', 'crunch', 'curl',
+        'pushup-elite', 'squat-elite', 'crunch-elite', 'curl-elite',
+        'pushup-legendary', 'squat-legendary', 'crunch-legendary', 'curl-legendary'
+    ];
+
+    exerciseTypes.forEach(type => {
+        const dailyProgress = processExerciseProgress(exerciseHistory, type);
+        updateAchievementCard(type, dailyProgress);
+    });
+}
+
+function processExerciseProgress(history, exerciseType) {
+    // Group exercises by date
+    const dailyExercises = history.reduce((acc, exercise) => {
+        if (exercise.exercise_type === exerciseType.replace('-elite', '').replace('-legendary', '')) {
+            const date = new Date(exercise.created_at).toLocaleDateString();
+            if (!acc[date]) {
+                acc[date] = 0;
+            }
+            acc[date] += exercise.reps;
+        }
+        return acc;
+    }, {});
+
+    // Count days where required reps were completed
+    let successfulDays = 0;
+    let requiredReps = 10; // default for regular achievements
+
+    if (exerciseType.includes('-legendary')) {
+        requiredReps = 50;
+    } else if (exerciseType.includes('-elite')) {
+        requiredReps = 25;
+    }
+
+    Object.values(dailyExercises).forEach(reps => {
+        if (reps >= requiredReps) {
+            successfulDays++;
+        }
+    });
+
+    return successfulDays;
+}
+
+function updateAchievementCard(exerciseType, daysCompleted) {
+    const card = document.querySelector(`[data-achievement="${exerciseType}"]`);
+    if (!card) return;
+
+    const circle = card.querySelector('.progress-ring__circle-progress');
+    const text = card.querySelector('.progress-ring__text');
+    const icon = card.querySelector('.achievement-icon');
+
+    // Update progress ring
+    const radius = circle.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (daysCompleted / 7) * circumference;
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = offset;
+
+    // Update text
+    text.textContent = `${daysCompleted}/7`;
+
+    // Update completion status
+    if (daysCompleted >= 7) {
+        card.classList.add('completed');
+        // Add special glow effect for legendary achievements
+        if (exerciseType.includes('-legendary')) {
+            card.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.5)';
+        }
+    } else {
+        card.classList.remove('completed');
+        card.style.boxShadow = '';
+    }
+}
+
 // Event Listeners
 accountForm.addEventListener('submit', updateProfile);
 profilePicture.addEventListener('change', uploadAvatar);
@@ -422,4 +533,10 @@ profilePicture.addEventListener('change', uploadAvatar);
 initializePage();
 
 // Make sure to call this function after page load
-document.addEventListener('DOMContentLoaded', updateWorkoutTotals); 
+document.addEventListener('DOMContentLoaded', updateWorkoutTotals);
+
+// Add to initialization
+document.addEventListener('DOMContentLoaded', async () => {
+    await initializePage();
+    await initializeAchievements();
+}); 
