@@ -109,7 +109,14 @@
                     <canvas id="repsChart"></canvas>
                 </div>
                 <div class="stats-section__chart">
-                    <h4>Exercise Progress (Last 7 Days)</h4>
+                    <div class="chart-header">
+                        <h4>Exercise Progress</h4>
+                        <select id="timeRangeSelect" class="time-range-select">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30">Last 30 Days</option>
+                            <option value="365">Last 365 Days</option>
+                        </select>
+                    </div>
                     <canvas id="formChart"></canvas>
                 </div>
                 <div class="stats-section__chart">
@@ -124,8 +131,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="/js/account.js"></script>
     <script type="module" src="/js/navigation.js"></script>
 </body>

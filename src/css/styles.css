@@ -577,6 +577,37 @@ body {
     height: calc(100% - 40px) !important;
 }
 
+.stats-section__chart .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.stats-section__chart .chart-header h4 {
+    margin: 0;
+}
+
+.time-range-select {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    background-color: white;
+    cursor: pointer;
+}
+
+.time-range-select:hover {
+    border-color: var(--primary-color);
+}
+
+.time-range-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+}
+
 .workout-totals {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
