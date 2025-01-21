@@ -9,8 +9,10 @@ const emailInput = document.getElementById('email');
 
 // Initialize page
 async function initializePage() {
+    console.log('Initializing page...');
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (!user) {
+        console.log('No user found, redirecting...');
         window.location.href = '/app.html';
         return;
     }
@@ -19,6 +21,7 @@ async function initializePage() {
     await loadProfile(user.id);
     await loadWorkoutStats(user.id);
     await updateWorkoutTotals();
+    console.log('Page initialization complete');
 }
 
 // Profile Management
@@ -129,6 +132,7 @@ async function uploadAvatar(event) {
 
 // Workout Statistics
 async function loadWorkoutStats(userId) {
+    console.log('Loading workout stats for user:', userId);
     const { data: exerciseHistory, error } = await supabase
         .from('exercise_history')
         .select('*')
@@ -141,26 +145,69 @@ async function loadWorkoutStats(userId) {
     }
 
     if (!exerciseHistory || exerciseHistory.length === 0) {
+        console.log('No exercise history found');
         document.querySelectorAll('.stats-section__chart').forEach(chart => {
             chart.innerHTML = '<p class="no-data">No workout data available yet. Start exercising to see your stats!</p>';
         });
         return;
     }
 
-    createRepsChart(exerciseHistory);
-    createFormScoreChart(exerciseHistory);
-    createFrequencyChart(exerciseHistory);
-    createDistributionChart(exerciseHistory);
+    console.log('Exercise history loaded:', exerciseHistory.length, 'records');
+
+    // Wait for Chart.js to be available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not loaded');
+        return;
+    }
+
+    // Destroy existing charts
+    if (window.repsChart instanceof Chart) {
+        window.repsChart.destroy();
+        window.repsChart = null;
+    }
+    if (window.formChart instanceof Chart) {
+        window.formChart.destroy();
+        window.formChart = null;
+    }
+    if (window.frequencyChart instanceof Chart) {
+        window.frequencyChart.destroy();
+        window.frequencyChart = null;
+    }
+    if (window.distributionChart instanceof Chart) {
+        window.distributionChart.destroy();
+        window.distributionChart = null;
+    }
+
+    // Initialize new charts
+    try {
+        console.log('Creating reps chart...');
+        await createRepsChart(exerciseHistory);
+        console.log('Creating form score chart...');
+        await createFormScoreChart(exerciseHistory);
+        console.log('Creating frequency chart...');
+        await createFrequencyChart(exerciseHistory);
+        console.log('Creating distribution chart...');
+        await createDistributionChart(exerciseHistory);
+        console.log('All charts created successfully');
+    } catch (err) {
+        console.error('Error creating charts:', err);
+    }
 }
 
-function createRepsChart(exerciseHistory) {
+async function createRepsChart(exerciseHistory) {
     const repsData = exerciseHistory.reduce((acc, exercise) => {
         acc[exercise.exercise_type] = (acc[exercise.exercise_type] || 0) + exercise.reps;
         return acc;
     }, {});
 
-    const ctx = document.getElementById('repsChart').getContext('2d');
-    new Chart(ctx, {
+    const canvas = document.getElementById('repsChart');
+    if (!canvas) {
+        console.error('Reps chart canvas not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    window.repsChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: Object.keys(repsData),
@@ -184,8 +231,11 @@ function createRepsChart(exerciseHistory) {
     });
 }
 
-function createFormScoreChart(exerciseHistory) {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
+async function createFormScoreChart(exerciseHistory) {
+    const timeRangeSelect = document.getElementById('timeRangeSelect');
+    const days = parseInt(timeRangeSelect.value);
+
+    const lastNDays = Array.from({ length: days }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - i);
         return d.toLocaleDateString();
@@ -194,28 +244,35 @@ function createFormScoreChart(exerciseHistory) {
     const exerciseTypes = ['pushup', 'squat', 'crunch', 'curl'];
     const exerciseData = {};
     exerciseTypes.forEach(type => {
-        exerciseData[type] = Object.fromEntries(last7Days.map(date => [date, 0]));
+        exerciseData[type] = Object.fromEntries(lastNDays.map(date => [date, 0]));
     });
 
     exerciseHistory.forEach(exercise => {
         const date = new Date(exercise.created_at).toLocaleDateString();
-        if (last7Days.includes(date) && exerciseData[exercise.exercise_type]) {
+        if (lastNDays.includes(date) && exerciseData[exercise.exercise_type]) {
             exerciseData[exercise.exercise_type][date] += exercise.reps;
         }
     });
 
     const datasets = exerciseTypes.map((type, index) => ({
         label: type.charAt(0).toUpperCase() + type.slice(1) + 's',
-        data: last7Days.map(date => exerciseData[type][date]),
+        data: lastNDays.map(date => exerciseData[type][date]),
         borderColor: getChartColor(index),
+        tension: 0.4,
         fill: false
     }));
 
-    const ctx = document.getElementById('formChart').getContext('2d');
-    new Chart(ctx, {
+    const canvas = document.getElementById('formChart');
+    if (!canvas) {
+        console.error('Form chart canvas not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    window.formChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: last7Days,
+            labels: lastNDays,
             datasets
         },
         options: {
@@ -230,6 +287,23 @@ function createFormScoreChart(exerciseHistory) {
     });
 }
 
+// Update the time range select handler
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Setting up time range select handler');
+    const timeRangeSelect = document.getElementById('timeRangeSelect');
+    if (timeRangeSelect) {
+        timeRangeSelect.addEventListener('change', async () => {
+            console.log('Time range changed to:', timeRangeSelect.value);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await loadWorkoutStats(user.id);
+            }
+        });
+    } else {
+        console.error('Time range select element not found');
+    }
+});
+
 function createFrequencyChart(exerciseHistory) {
     const frequencyData = exerciseHistory.reduce((acc, exercise) => {
         const date = new Date(exercise.created_at).toLocaleDateString();
@@ -238,7 +312,7 @@ function createFrequencyChart(exerciseHistory) {
     }, {});
 
     const ctx = document.getElementById('frequencyChart').getContext('2d');
-    new Chart(ctx, {
+    window.frequencyChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: Object.keys(frequencyData),
@@ -272,7 +346,7 @@ function createDistributionChart(exerciseHistory) {
     }, {});
 
     const ctx = document.getElementById('distributionChart').getContext('2d');
-    new Chart(ctx, {
+    window.distributionChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: Object.keys(distributionData),
